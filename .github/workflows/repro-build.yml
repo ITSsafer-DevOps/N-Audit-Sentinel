@@ -27,10 +27,11 @@ jobs:
           tar -C out -czf n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz n-audit-sentinel n-audit
           sha256sum n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz > n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz.sha256
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release and upload artifacts
+        uses: softprops/action-gh-release@v1
         with:
-          name: reproducible-release-${{ github.ref_name }}
-          path: |
+          files: |
             n-audit-sentinel-${{ github.ref_name }}-linux-amd64.tar.gz
             n-audit-sentinel-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
