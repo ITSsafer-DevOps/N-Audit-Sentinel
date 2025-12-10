@@ -1,0 +1,8 @@
+# Example terraform.tfvars for deploying N-Audit Sentinel
+# Copy this file to terraform.tfvars and adjust values to your environment.
+
+namespace         = "default"
+image_name        = "your-registry/your-repo/n-audit-sentinel"
+image_tag         = "v1.0.0"
+pvc_storage_size  = "50Gi"
+# pvc_storage_class = "standard"  # uncomment and set as appropriate

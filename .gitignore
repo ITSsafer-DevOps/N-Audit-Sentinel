@@ -1,0 +1,50 @@
+# Go build artifacts
+bin/
+out/
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Go module/vendor (optional)
+vendor/
+
+# Generated files
+*.log
+coverage.*
+*.cover
+*.gcov
+
+# Environment & secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Archives
+*.tar.gz
+*.zip
+
+# Terraform local state (if added later)
+.terraform/
+terraform.tfstate*
+
+# Misc
+.tmp/
+terraform.tfvars
+n-audit-release
+*.sha256
+logs/
