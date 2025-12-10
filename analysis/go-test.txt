@@ -1,0 +1,10 @@
+	github.com/ITSsafer-DevOps/N-Audit-Sentinel/cmd/n-audit-cli		coverage: 0.0% of statements
+	github.com/ITSsafer-DevOps/N-Audit-Sentinel/cmd/n-audit-release		coverage: 0.0% of statements
+	github.com/ITSsafer-DevOps/N-Audit-Sentinel/cmd/n-audit-sentinel		coverage: 0.0% of statements
+ok  	github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/discovery	0.006s	coverage: 95.5% of statements
+ok  	github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/logger	0.013s	coverage: 87.0% of statements
+	github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/policy		coverage: 0.0% of statements
+ok  	github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/recorder	0.007s	coverage: 0.0% of statements
+ok  	github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/signature	0.124s	coverage: 73.9% of statements
+ok  	github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/tui	0.004s	coverage: 67.9% of statements
+ok  	github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/validation	0.004s	coverage: 84.6% of statements

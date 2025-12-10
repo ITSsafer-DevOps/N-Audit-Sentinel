@@ -1,0 +1,41 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters-settings:
+  govet:
+    check-shadowing: true
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - gofmt
+    - gosimple
+    - ineffassign
+    - unused
+    - typecheck
+    - depguard
+    - errcheck
+    - revive
+    - gocyclo
+    - bodyclose
+    - goconst
+    - gosec
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    - linters:
+        - revive
+      text: "receiver name .* should be a reflection of the value" # noisy rule
+
+run:
+  # Exclude generated files and vendor
+  skip-dirs:
+    - vendor
+    - testdata
+  skip-files:
+    - ".*_gen.go"

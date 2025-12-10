@@ -1,0 +1,5 @@
+[analysis] workspace: /home/rhel/VScode/N-Audit_Sentinel/n-audit-sentinel-source-code
+[analysis] go version: go version go1.25.3 (Red Hat 1.25.3-1.el9_7) linux/amd64
+[analysis] golangci-lint not found; skipping. To run, install golangci-lint: https://golangci-lint.run/usage/install/
+[analysis] staticcheck not found; skipping.
+[analysis] govulncheck not found; skipping.

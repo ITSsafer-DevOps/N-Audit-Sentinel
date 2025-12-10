@@ -15,13 +15,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nethemba/n-audit-sentinel/internal/discovery"
-	"github.com/nethemba/n-audit-sentinel/internal/logger"
-	"github.com/nethemba/n-audit-sentinel/internal/policy"
-	"github.com/nethemba/n-audit-sentinel/internal/recorder"
-	"github.com/nethemba/n-audit-sentinel/internal/signature"
-	"github.com/nethemba/n-audit-sentinel/internal/tui"
-	"github.com/nethemba/n-audit-sentinel/internal/validation"
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/discovery"
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/logger"
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/policy"
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/recorder"
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/signature"
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/tui"
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/validation"
 )
 
 const (
