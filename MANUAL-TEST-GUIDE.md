@@ -148,5 +148,5 @@ N_AUDIT_SCOPE_DOMAINS="example.com,test.local"
 ## Kontakt
 Pre otázky alebo bug reporty:
 - Developer: Kristián Kašník
-- Company: Nethemba s.r.o.
-- Website: https://www.nethemba.com
+- Company: 
+- Website: https://www..com
