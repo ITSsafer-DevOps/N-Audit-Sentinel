@@ -18,6 +18,42 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: Install staticcheck (go-based)
+        run: |
+          set -euo pipefail
+          echo "Installing staticcheck"
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Install golangci-lint
+        run: |
+          set -euo pipefail
+          echo "Installing golangci-lint"
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v1.59.0
+
+      - name: Run golangci-lint
+        run: |
+          set -euo pipefail
+          echo "Running golangci-lint"
+          golangci-lint run ./... --timeout 5m
+
+      - name: Run staticcheck
+        run: |
+          set -euo pipefail
+          echo "Running staticcheck"
+          staticcheck ./...
+
+      - name: Run project static analysis script
+        run: |
+          set -euo pipefail
+          echo "Running scripts/analysis/run_static_analysis.sh"
+          ./scripts/analysis/run_static_analysis.sh
+
+      - name: Upload analysis artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-artifacts
+          path: analysis/**
+
       - name: Build reproducible artifacts
         run: |
           set -euo pipefail
