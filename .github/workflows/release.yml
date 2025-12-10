@@ -34,13 +34,30 @@ jobs:
         
       - name: Build binary (Linux AMD64)
         run: |
+          echo "=== Build Start ==="
+          echo "PWD: $(pwd)"
+          echo "Go version: $(go version)"
+          echo "Available cmd directories:"
+          ls -la cmd/
+          echo "=== Starting build ==="
           GOOS=linux GOARCH=amd64 go build -v -o n-audit-sentinel ./cmd/n-audit-sentinel/
+          echo "=== Build complete ==="
           ls -lh n-audit-sentinel
+          file n-audit-sentinel
+          echo "=== Build End ==="
           
       - name: Generate checksum
         run: |
           sha256sum n-audit-sentinel > n-audit-sentinel.sha256
           cat n-audit-sentinel.sha256
+          
+      - name: Verify artifacts before release
+        run: |
+          echo "=== Files to be uploaded ==="
+          ls -lh n-audit-sentinel*
+          echo "=== Checksum verification ==="
+          sha256sum -c n-audit-sentinel.sha256
+          echo "=== Ready for release ==="
           
       - name: Create Release & Upload Assets
         uses: softprops/action-gh-release@v1
