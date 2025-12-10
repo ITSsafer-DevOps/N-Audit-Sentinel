@@ -1,0 +1,36 @@
+name: Reproducible Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build reproducible artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o out/n-audit-sentinel ./cmd/n-audit-sentinel
+          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o out/n-audit ./cmd/n-audit-cli
+          tar -C out -czf n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz n-audit-sentinel n-audit
+          sha256sum n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz > n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz.sha256
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproducible-release-${{ github.ref_name }}
+          path: |
+            n-audit-sentinel-${{ github.ref_name }}-linux-amd64.tar.gz
+            n-audit-sentinel-${{ github.ref_name }}-linux-amd64.tar.gz.sha256

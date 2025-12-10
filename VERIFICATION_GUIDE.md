@@ -125,3 +125,32 @@ Optionally verify the SSH signature using the public key via a short Go helper (
 ## Cross‑Links
 - Deployment: `DEPLOYMENT.md`
 - Overview and security model: `README.md`
+
+## How to verify a release artifact (SHA256)
+
+1. Download the release tarball and the `.sha256` file from the GitHub Release page.
+
+```bash
+# example
+curl -L -o n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz \
+	https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/releases/download/v1.0.0-Beta/n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz
+curl -L -o n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz.sha256 \
+	https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/releases/download/v1.0.0-Beta/n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz.sha256
+```
+
+2. Compute local SHA256 and compare:
+
+```bash
+sha256sum n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz
+cat n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz.sha256
+# Both values should match (hex string)
+```
+
+3. (Optional) Extract and run a smoke test:
+
+```bash
+tar -xzf n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz
+./n-audit-sentinel --system-audit || echo "smoke test failed"
+```
+
+If the SHA256 matches and the smoke test succeeds, the artifact is verified.

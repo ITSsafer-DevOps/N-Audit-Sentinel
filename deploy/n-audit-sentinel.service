@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=root
+User=n-audit
 WorkingDirectory=/var/lib/n-audit
 Environment=LOG_FILE=/var/lib/n-audit/session.log
 ExecStart=/usr/local/bin/n-audit-sentinel --system-audit --log-file ${LOG_FILE} --sign-key /var/lib/n-audit/signing/id_ed25519
@@ -14,10 +14,22 @@ RestartSec=5
 StandardOutput=journal
 StandardError=journal
 
+# Hardening
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=yes
+NoNewPrivileges=yes
+ReadOnlyPaths=/usr
+RestrictAddressFamilies=AF_INET AF_INET6
+CapabilityBoundingSet=
+
 [Install]
 WantedBy=multi-user.target
 
 # Notes:
-# - Create the signing directory and key: mkdir -p /var/lib/n-audit/signing && ssh-keygen -t ed25519 -f /var/lib/n-audit/signing/id_ed25519
+# - Create the `n-audit` service user and ensure directories are owned by it:
+#   sudo useradd --system --no-create-home --shell /sbin/nologin n-audit || true
+#   sudo mkdir -p /var/lib/n-audit/signing && sudo chown -R n-audit:n-audit /var/lib/n-audit
+# - Generate signing key: sudo -u n-audit ssh-keygen -t ed25519 -N "" -f /var/lib/n-audit/signing/id_ed25519
 # - Protect the key: chmod 700 /var/lib/n-audit/signing && chmod 600 /var/lib/n-audit/signing/id_ed25519
-# - Consider adjusting `User=` to a non-root user and grant required capabilities if desired.
+# - If additional capabilities are required, grant only the minimal set via `AmbientCapabilities` or adjust the unit carefully.
