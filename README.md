@@ -155,7 +155,7 @@ kubectl attach -it n-audit-sentinel -c sentinel
 Post-deployment checks are in `VERIFICATION_GUIDE.md`.
 
 ## License
-MIT License © Nethemba s.r.o. and contributors. See `LICENSE` for details.
+MIT License © Kristián Kašník - ITSsafer-DevOps and contributors. See `LICENSE` for details.
 
 ## Links
 - Deployment: `DEPLOYMENT.md`
