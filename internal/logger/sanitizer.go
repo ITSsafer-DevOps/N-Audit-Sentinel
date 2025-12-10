@@ -77,7 +77,7 @@ func (tw *TimestampedWriter) Write(p []byte) (n int, err error) {
 
 		// Sanitize and timestamp line.
 		clean := StripANSI(line)
-		ts := time.Now().UTC().Format("2006-01-02 15:04:05") + " "
+		ts := time.Now().UTC().Format(time.RFC3339Nano) + " "
 		if _, err = tw.w.Write([]byte(ts)); err != nil {
 			return len(p), err
 		}
