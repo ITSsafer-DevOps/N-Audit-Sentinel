@@ -1,0 +1,52 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'release-*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v4
+        with:
+          go-version: stable
+      
+      - run: |
+          GOOS=linux GOARCH=amd64 go build -v -o n-audit-sentinel ./cmd/n-audit-sentinel/
+          sha256sum n-audit-sentinel > n-audit-sentinel.sha256
+      
+      - uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      
+      - uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./n-audit-sentinel
+          asset_name: n-audit-sentinel
+          asset_content_type: application/octet-stream
+      
+      - uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./n-audit-sentinel.sha256
+          asset_name: n-audit-sentinel.sha256
+          asset_content_type: text/plain
