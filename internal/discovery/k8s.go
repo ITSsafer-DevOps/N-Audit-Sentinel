@@ -1,8 +1,8 @@
 // N-Audit Sentinel - Kubernetes Discovery
 // Developer: Kristián Kašník
-// Company: Nethemba s.r.o. (https://www.nethemba.com)
+// Company: ITSsafer-DevOps
 // License: MIT License
-// Copyright (c) 2025 Kristián Kašník, Nethemba s.r.o.
+// Copyright (c) 2025 Kristián Kašník, ITSsafer-DevOps
 // Automatic discovery of Kubernetes API server and DNS servers.
 package discovery
 

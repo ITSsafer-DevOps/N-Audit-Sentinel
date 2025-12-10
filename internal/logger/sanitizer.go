@@ -1,8 +1,8 @@
 // N-Audit Sentinel - Logger Sanitizer
 // Developer: Kristián Kašník
-// Company: Nethemba s.r.o. (https://www.nethemba.com)
+// Company: ITSsafer-DevOps
 // License: MIT License
-// Copyright (c) 2025 Kristián Kašník, Nethemba s.r.o.
+// Copyright (c) 2025 Kristián Kašník, ITSsafer-DevOps
 // This file provides ANSI escape sequence stripping and a timestamping writer.
 package logger
 

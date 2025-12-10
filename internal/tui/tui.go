@@ -27,8 +27,7 @@ var asciiBanner = `███╗   ██╗       █████╗ ██╗  
 func ShowBanner(w io.Writer) {
 	fmt.Fprintln(w, asciiBanner)
 	fmt.Fprintln(w, "Developer: Kristián Kašník")
-	fmt.Fprintln(w, "Company: Nethemba s.r.o.")
-	fmt.Fprintln(w, "Website: https://www.nethemba.com")
+	fmt.Fprintln(w, "Company: ITSsafer-DevOps")
 	fmt.Fprintln(w, "License: MIT License (Open Source)")
 	fmt.Fprintln(w)
 }

@@ -1,8 +1,8 @@
 // N-Audit Sentinel - Cilium Policy Generator
 // Developer: Kristián Kašník
-// Company: Nethemba s.r.o. (https://www.nethemba.com)
+// Company: ITSsafer-DevOps
 // License: MIT License
-// Copyright (c) 2025 Kristián Kašník, Nethemba s.r.o.
+// Copyright (c) 2025 Kristián Kašník, ITSsafer-DevOps
 // Generates and manages CiliumNetworkPolicy with 3-zone enforcement.
 // Maintenance Zone whitelist: *.kali.org, github.com, docker.io, gitlab.com, pypi.org, crates.io
 package policy
