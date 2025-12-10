@@ -156,3 +156,26 @@ kubectl exec n-audit-sentinel -c sentinel -- /usr/local/bin/n-audit
 ## See Also
 - `VERIFICATION_GUIDE.md` for functional checks
 - `README.md` for architecture and security model
+
+## Optional: Install as a systemd service (local node)
+
+If you want to run `n-audit-sentinel` as a local systemd service (for local audits), copy the provided unit file and enable it:
+
+```bash
+# Copy unit file to systemd
+sudo cp deploy/n-audit-sentinel.service /etc/systemd/system/n-audit-sentinel.service
+
+# Reload systemd units
+sudo systemctl daemon-reload
+
+# Enable and start the service
+sudo systemctl enable --now n-audit-sentinel.service
+
+# Follow the logs
+sudo journalctl -u n-audit-sentinel -f
+```
+
+Notes:
+- Ensure the signing key exists (`/var/lib/n-audit/signing/id_ed25519`) and has correct permissions (`chmod 600`).
+- Adjust `User=` in the unit file if you prefer a non-root service; grant necessary capabilities if required.
+- The service uses `/var/lib/n-audit` as `WorkingDirectory` by default; ensure the directory exists and is writable by the service user.
