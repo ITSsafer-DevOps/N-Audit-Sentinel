@@ -160,3 +160,37 @@ MIT License © Kristián Kašník - ITSsafer-DevOps and contributors. See `LICEN
 ## Links
 - Deployment: `DEPLOYMENT.md`
 - Verification: `VERIFICATION_GUIDE.md`
+
+## Runtime Parameters & systemd service example
+
+Recommended runtime parameters (examples):
+
+- `--system-audit` : run a basic OS audit scan (default quick checks)
+- `--verbose` : enable verbose logging for troubleshooting
+- `--log-file /var/lib/n-audit/session.log` : explicit log file location
+- `--sign-key /var/lib/n-audit/signing/id_ed25519` : path to SSH signing key
+
+Example `systemd` unit (create `/etc/systemd/system/n-audit-sentinel.service`):
+
+```ini
+[Unit]
+Description=N-Audit Sentinel (local system audit)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/lib/n-audit
+ExecStart=/usr/local/bin/n-audit-sentinel --system-audit --log-file /var/lib/n-audit/session.log --sign-key /var/lib/n-audit/signing/id_ed25519
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Notes:
+
+- Ensure the `sign-key` exists and is protected (`chmod 600`) and the directory is `700`.
+- Adjust `User=` to a non-root account if you prefer reduced privileges (verify required capabilities).
+- Use `journalctl -u n-audit-sentinel -f` to follow logs when running under `systemd`.
