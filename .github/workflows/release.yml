@@ -34,7 +34,7 @@ jobs:
         
       - name: Build binary (Linux AMD64)
         run: |
-          GOOS=linux GOARCH=amd64 go build -v -o n-audit-sentinel ./cmd/n-audit/
+          GOOS=linux GOARCH=amd64 go build -v -o n-audit-sentinel ./cmd/n-audit-sentinel/
           ls -lh n-audit-sentinel
           
       - name: Generate checksum
