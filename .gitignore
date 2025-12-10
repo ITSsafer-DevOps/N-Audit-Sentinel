@@ -48,3 +48,4 @@ terraform.tfvars
 n-audit-release
 *.sha256
 logs/
+n-audit-sentinel
