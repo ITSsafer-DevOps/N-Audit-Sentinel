@@ -1,3 +1,5 @@
+**Origin Note:** This project was architected and developed as a **proactive R&D initiative** ("going the extra mile") within the recruitment process for **Nethemba s.r.o.**
+
 # N-Audit Sentinel
 
 ```
@@ -11,7 +13,7 @@
 
 - Developer: Kristián Kašník
 - Company: Nethemba s.r.o.
-- Website: https://www.nethemba.com
+- Contact: itssafer@itssafer.org
 - License: MIT License (Open Source)
 
 N-Audit Sentinel is a Kubernetes‑native forensic wrapper that runs as PID 1 inside a Kali Linux pod. It hardens network access with Cilium, guarantees clean and human‑readable logs, and seals every session with a cryptographic signature.
