@@ -14,6 +14,8 @@ flowchart TB
 	H --> I[Artifacts on hostPath]
 ```
 
+<!-- mermaid: validated -->
+
 ## Prerequisites
 - Kubernetes cluster (K3s or K8s) with Cilium CNI
 - `kubectl` and container build tool (Docker/nerdctl)

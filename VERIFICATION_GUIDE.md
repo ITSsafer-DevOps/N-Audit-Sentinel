@@ -14,6 +14,8 @@ flowchart TB
 	H --> I[Verify SHA-256 & signature]
 ```
 
+<!-- mermaid: validated -->
+
 ## 1. Verifying Environment Discovery
 - After the pod starts, check logs:
 ```bash

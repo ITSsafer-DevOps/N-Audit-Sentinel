@@ -54,6 +54,8 @@ flowchart LR
   Pod <-->|mount| Vol
 ```
 
+<!-- mermaid: validated -->
+
 Key modules
 - `cmd/n-audit-sentinel`: PID 1 runtime and session lifecycle
 - `cmd/n-audit`: helper to trigger graceful exit (sends SIGUSR1)
@@ -89,6 +91,8 @@ sequenceDiagram
     S->>C: Delete CNP
     S-->>U: Exit PID 1
 ```
+
+<!-- mermaid: validated -->
 
 ## Quick Start
 
