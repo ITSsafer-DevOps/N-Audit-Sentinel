@@ -178,6 +178,12 @@ sudo journalctl -u n-audit-sentinel -f
 ```
 
 Notes:
-- Ensure the signing key exists (`/var/lib/n-audit/signing/id_ed25519`) and has correct permissions (`chmod 600`).
-- Adjust `User=` in the unit file if you prefer a non-root service; grant necessary capabilities if required.
-- The service uses `/var/lib/n-audit` as `WorkingDirectory` by default; ensure the directory exists and is writable by the service user.
+
+## New Release & Backup Utilities
+
+The project now uses Go-based utilities for release and backup operations:
+
+- `cmd/release-manager` — builds release artifacts deterministically and packages them with checksums.
+- `cmd/backup-manager` — creates a Gold Master source archive using `git archive` and generates checksums.
+
+Run these locally for verification and in CI for reproducible releases.

@@ -18,10 +18,20 @@
 N-Audit Sentinel is a Kubernetes‑native forensic wrapper that runs as PID 1 inside a Kali Linux pod. It hardens network access with Cilium, guarantees clean and human‑readable logs, and seals every session with a cryptographic signature.
 
 ## What, Why, How
-- What: A safe, auditable, interactive shell for red team and forensics on Kubernetes.
-- Why: Prevent mistakes (accidental exits), restrict traffic to explicit scope, and produce tamper‑evident logs.
-- How: PID 1 safety loop, scope‑driven Cilium policy, ANSI‑free logs with timestamps, and SSH‑based sealing at teardown.
 
+## New Release & Backup Utilities
+
+This repository now includes two Go-based utilities that replace legacy shell scripts:
+
+- `cmd/release-manager`: deterministic build and packaging tool. Example:
+
+  `go run ./cmd/release-manager --version v1.0.0-Beta --out out`
+
+- `cmd/backup-manager`: creates a deterministic source archive (Gold Master) and a `.sha256` checksum. Example:
+
+  `go run ./cmd/backup-manager --out gold-master-20251210T235959Z.tar.gz --ref HEAD`
+
+These tools are intended for local reproduction and CI usage. See `cmd/*/README.md` for details.
 ## Features at a Glance
 
 | Capability | What it does | Why it matters |
