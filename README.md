@@ -12,7 +12,6 @@
 ```
 
 - Developer: Kristián Kašník
-- Company: Nethemba s.r.o.
 - Contact: itssafer@itssafer.org
 - License: MIT License (Open Source)
 
