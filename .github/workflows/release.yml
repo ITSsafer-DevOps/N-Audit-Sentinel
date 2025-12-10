@@ -59,14 +59,36 @@ jobs:
           sha256sum -c n-audit-sentinel.sha256
           echo "=== Ready for release ==="
           
-      - name: Create Release & Upload Assets
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            n-audit-sentinel
-            n-audit-sentinel.sha256
-          draft: false
-          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
-          generate_release_notes: true
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
+
+      - name: Upload Binary Asset
+        uses: actions/upload-release-asset@v1
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./n-audit-sentinel
+          asset_name: n-audit-sentinel
+          asset_content_type: application/octet-stream
+
+      - name: Upload Checksum Asset
+        uses: actions/upload-release-asset@v1
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./n-audit-sentinel.sha256
+          asset_name: n-audit-sentinel.sha256
+          asset_content_type: text/plain
