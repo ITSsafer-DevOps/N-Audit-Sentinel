@@ -1,4 +1,4 @@
-**Origin Note:** This project was architected and developed as a **proactive R&D initiative** ("going the extra mile") within the recruitment process for **Nethemba s.r.o.**
+**Origin Note:** This project was architected and developed as a **proactive R&D initiative** ("going the extra mile") within the recruitment process.
 
 # N-Audit Sentinel
 
