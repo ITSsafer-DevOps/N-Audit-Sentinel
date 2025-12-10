@@ -1,4 +1,4 @@
-name: Release Build & Publish
+name: Simple Release
 
 on:
   push:
@@ -13,82 +13,25 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Go
-        uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v4
         with:
           go-version: stable
           cache: true
-          
-      - name: Verify Go installation
-        run: go version
-        
-      - name: Download dependencies
-        run: go mod download
-        
-      - name: Run tests
-        run: go test -v ./...
-        continue-on-error: true
-        
-      - name: Build binary (Linux AMD64)
-        run: |
-          echo "=== Build Start ==="
-          echo "PWD: $(pwd)"
-          echo "Go version: $(go version)"
-          echo "Available cmd directories:"
-          ls -la cmd/
-          echo "=== Starting build ==="
+      
+      - run: go version
+      
+      - run: go test -v ./... || true
+      
+      - run: |
           GOOS=linux GOARCH=amd64 go build -v -o n-audit-sentinel ./cmd/n-audit-sentinel/
-          echo "=== Build complete ==="
-          ls -lh n-audit-sentinel
-          file n-audit-sentinel
-          echo "=== Build End ==="
-          
-      - name: Generate checksum
-        run: |
           sha256sum n-audit-sentinel > n-audit-sentinel.sha256
-          cat n-audit-sentinel.sha256
-          
-      - name: Verify artifacts before release
-        run: |
-          echo "=== Files to be uploaded ==="
-          ls -lh n-audit-sentinel*
-          echo "=== Checksum verification ==="
-          sha256sum -c n-audit-sentinel.sha256
-          echo "=== Ready for release ==="
-          
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        if: success()
+      
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            n-audit-sentinel
+            n-audit-sentinel.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
-
-      - name: Upload Binary Asset
-        uses: actions/upload-release-asset@v1
-        if: success()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./n-audit-sentinel
-          asset_name: n-audit-sentinel
-          asset_content_type: application/octet-stream
-
-      - name: Upload Checksum Asset
-        uses: actions/upload-release-asset@v1
-        if: success()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./n-audit-sentinel.sha256
-          asset_name: n-audit-sentinel.sha256
-          asset_content_type: text/plain
