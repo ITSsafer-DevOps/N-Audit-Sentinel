@@ -210,10 +210,24 @@ Add tests for previously untested packages and improve overall coverage.
 ✓ Performance: ~0.6s average test execution
 ```
 
-### Command to Verify
-```bash
-go test -coverprofile=coverage.out ./internal/...
-go tool cover -func=coverage.out | grep total
+### Command to Verify (Go example)
+```go
+// Run coverage generation and summary via Go
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("go", "test", "-coverprofile=coverage.out", "./internal/...").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("go", "tool", "cover", "-func=coverage.out").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 ---
@@ -260,18 +274,49 @@ go tool cover -func=coverage.out | grep total
 - **Commits**: 5 major refactor commits
 - **Status**: Ready for PR review and merge to main
 
-### To Review Changes
-```bash
-git log --oneline refactor/consolidate-logging-seal | head -10
-git diff main refactor/consolidate-logging-seal --stat
+### To Review Changes (Go example)
+```go
+// Show recent commits and diff stat via Go
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("sh", "-c", "git log --oneline refactor/consolidate-logging-seal | head -10").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("git", "diff", "main", "refactor/consolidate-logging-seal", "--stat").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
-### To Merge to Main
-```bash
-git checkout main
-git pull origin main
-git merge refactor/consolidate-logging-seal
-git push origin main
+### To Merge to Main (Go example)
+```go
+// Merge branch to main using Go
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  cmds := [][]string{
+    {"git", "checkout", "main"},
+    {"git", "pull", "origin", "main"},
+    {"git", "merge", "refactor/consolidate-logging-seal"},
+    {"git", "push", "origin", "main"},
+  }
+  for _, a := range cmds {
+    if err := exec.Command(a[0], a[1:]...).Run(); err != nil {
+      log.Fatal(err)
+    }
+  }
+}
 ```
 
 ---

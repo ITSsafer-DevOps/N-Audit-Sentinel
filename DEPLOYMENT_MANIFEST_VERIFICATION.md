@@ -36,13 +36,43 @@ beta-test-deployment/serviceaccount.yaml
 ## Conclusion & Recommendations
 
 - In this environment `kubectl` could not reach a Kubernetes API server, so full schema validation could not be completed. This is expected when running locally without a configured cluster or KUBECONFIG.
-- Recommendation: Run the following in CI (where a kubeconfig or Kubernetes API is available) or locally with a valid `KUBECONFIG`:
+Recommendation: Run the following in CI (where a kubeconfig or Kubernetes API is available) or locally with a valid `KUBECONFIG` (Go example):
 
-```bash
-for manifest in deploy/*/*.{yaml,yml} beta-test-deployment/*.{yaml,yml}; do
-  echo "Validating: $manifest"
-  kubectl apply --dry-run=client -f "$manifest" --validate=true | head -n 5
-done
+```go
+// Validate manifests by invoking kubectl for each manifest from Go
+package main
+
+import (
+  "io/ioutil"
+  "log"
+  "os"
+  "os/exec"
+  "path/filepath"
+)
+
+func main() {
+  patterns := []string{"deploy/*/*.{yaml,yml}", "beta-test-deployment/*.{yaml,yml}"}
+  for _, pat := range patterns {
+    files, _ := filepath.Glob(pat)
+    for _, f := range files {
+      log.Printf("Validating: %s", f)
+      cmd := exec.Command("kubectl", "apply", "--dry-run=client", "-f", f, "--validate=true")
+      out, err := cmd.CombinedOutput()
+      if err != nil {
+        log.Printf("kubectl error: %v\n%s", err, string(out))
+        continue
+      }
+      // print first few lines
+      if len(out) > 0 {
+        if len(out) > 512 {
+          out = out[:512]
+        }
+        ioutil.WriteFile("/dev/stdout", out, 0644)
+      }
+    }
+  }
+  _ = os.Stdout
+}
 ```
 
 - Alternatively, use manifest linters such as `kubeval` or `kubeconform` in CI to validate YAML and API compatibility without accessing a live cluster.

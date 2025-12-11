@@ -8,10 +8,27 @@ Before deployment, build and test the project:
 
 Use the Makefile for deterministic builds and tests or the Go helpers in `docs/DEPLOYMENT_HELPERS.md`.
 
-Example (Makefile):
+Example (Makefile) — Go example:
 
-```bash
-make build && make test
+```go
+// Run Make targets from Go
+package main
+
+import (
+  "log"
+  "os"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("make", "build").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("make", "test").Run(); err != nil {
+    log.Fatal(err)
+  }
+  _ = os.Stdout
+}
 ```
 
 Quick Go automation example (see full helpers in `docs/DEPLOYMENT_HELPERS.md`):
@@ -77,12 +94,28 @@ Use the Makefile release target or the image helpers in `docs/DEPLOYMENT_HELPERS
 
 Quick steps:
 
-```bash
-# Build release artifact
-make release VERSION=v1.0.0-Beta
+```go
+// Build release artifact and load image into K3s via shell pipeline
+package main
 
-# For K3s (containerd): load image into cluster
-docker save n-audit-sentinel:v1.0.0-Beta | sudo k3s ctr images import -
+import (
+  "log"
+  "os"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("make", "release", "VERSION=v1.0.0-Beta").Run(); err != nil {
+    log.Fatal(err)
+  }
+  // Use a shell for the pipeline
+  cmd := exec.Command("sh", "-c", "docker save n-audit-sentinel:v1.0.0-Beta | sudo k3s ctr images import -")
+  cmd.Stdout = os.Stdout
+  cmd.Stderr = os.Stderr
+  if err := cmd.Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 Example Go wrapper (illustrative):
@@ -98,30 +131,62 @@ func main(){ exec.Command("sh","-c","docker save n-audit-sentinel:v1.0.0-Beta | 
 
 **Push to Docker Hub or private registry:**
 
-```bash
-# Build for registry
-docker build -t your-registry/n-audit-sentinel:v1.0.0-Beta .
+```go
+// Build and push image using Docker from Go
+package main
 
-# Login and push
-docker login
-docker push your-registry/n-audit-sentinel:v1.0.0-Beta
+import (
+  "log"
+  "os"
+  "os/exec"
+)
 
-# Update pod manifest to use registry image
-# (change `image:` field in pod YAML)
+func main() {
+  if err := exec.Command("docker", "build", "-t", "your-registry/n-audit-sentinel:v1.0.0-Beta", ".").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("docker", "login").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("docker", "push", "your-registry/n-audit-sentinel:v1.0.0-Beta").Run(); err != nil {
+    log.Fatal(err)
+  }
+  _ = os.Stdout
+}
 ```
 
 ### Option C: Terraform-Driven (Recommended for Production)
 
 **Automated end-to-end deployment:**
 
-```bash
-cd deploy/terraform
-terraform init
-terraform plan \
-  -var="namespace=default" \
-  -var="image_name=n-audit-sentinel" \
-  -var="image_tag=v1.0.0-Beta"
-terraform apply -auto-approve
+```go
+// Run Terraform commands from Go (illustrative)
+package main
+
+import (
+  "log"
+  "os"
+  "os/exec"
+)
+
+func main() {
+  if err := os.Chdir("deploy/terraform"); err != nil {
+    log.Fatal(err)
+  }
+  cmds := [][]string{
+    {"terraform", "init"},
+    {"terraform", "plan", "-var=namespace=default", "-var=image_name=n-audit-sentinel", "-var=image_tag=v1.0.0-Beta"},
+    {"terraform", "apply", "-auto-approve"},
+  }
+  for _, a := range cmds {
+    cmd := exec.Command(a[0], a[1:]...)
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    if err := cmd.Run(); err != nil {
+      log.Fatal(err)
+    }
+  }
+}
 ```
 
 Terraform handles:
@@ -173,9 +238,27 @@ Use provided manifests or the programmatic `ApplyRBAC` helper in `docs/DEPLOYMEN
 
 CLI example (apply manifest):
 
-```bash
-kubectl apply -f beta-test-deployment/serviceaccount.yaml
-kubectl get serviceaccount n-audit-sentinel
+```go
+// Apply ServiceAccount manifest via kubectl from Go
+package main
+
+import (
+  "log"
+  "os"
+  "os/exec"
+)
+
+func main() {
+  cmd := exec.Command("kubectl", "apply", "-f", "beta-test-deployment/serviceaccount.yaml")
+  cmd.Stdout = os.Stdout
+  cmd.Stderr = os.Stderr
+  if err := cmd.Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("kubectl", "get", "serviceaccount", "n-audit-sentinel").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 Go example (programmatic):
@@ -189,14 +272,24 @@ if err := ApplyRBAC(kubeClient); err != nil { log.Fatalf("rbac apply failed: %v"
 
 ### Verify permissions
 
-```bash
-# Check ServiceAccount was created
-kubectl get sa n-audit-sentinel -o yaml
+```go
+// Verify ServiceAccount and RBAC via kubectl from Go
+package main
 
-# Check RBAC bindings
-kubectl auth can-i create ciliumnetworkpolicies \
-  --as=system:serviceaccount:default:n-audit-sentinel
-# Expected output: yes
+import (
+  "log"
+  "os"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("kubectl", "get", "sa", "n-audit-sentinel", "-o", "yaml").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("kubectl", "auth", "can-i", "create", "ciliumnetworkpolicies", "--as=system:serviceaccount:default:n-audit-sentinel").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 ## Step 4: Deploy Pod Manifest
@@ -309,10 +402,22 @@ cmd.Stdout = os.Stdout; cmd.Stderr = os.Stderr; cmd.Run()
 
 **From host (via hostPath):**
 
-On the node hosting the pod run:
+On the node hosting the pod run (Go example):
 
-```bash
-sudo tail -f /mnt/n-audit-data/session.log
+```go
+// Tail the session log on the node via Go (requires sudo)
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("sudo", "tail", "-f", "/mnt/n-audit-data/session.log").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 ### Validate Log Integrity
@@ -393,12 +498,22 @@ The build process uses multi-stage compilation to minimize attack surface:
    - Includes penetration testing tools and utilities
    - Security focus: Immutable application binary, mutable audit logs
 
-**Build command (deterministic):**
-```bash
-docker build \
-  --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-  --build-arg VCS_REF=$(git rev-parse --short HEAD) \
-  -t n-audit-sentinel:v1.0.0-Beta .
+**Build command (deterministic):** (Go example)
+```go
+// Build docker image with deterministic build args via Go (uses sh -c for shell expansion)
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  cmd := exec.Command("sh", "-c", "docker build --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=$(git rev-parse --short HEAD) -t n-audit-sentinel:v1.0.0-Beta .")
+  if err := cmd.Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 ### Cilium Policy Application Workflow

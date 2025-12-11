@@ -25,6 +25,11 @@ import (
 // It wraps the versioned Cilium clientset to create and delete CiliumNetworkPolicy resources.
 type CiliumClient struct {
 	clientset ciliumclientset.Interface
+	// test hooks: optional function overrides for creating and deleting policies.
+	// When set, these are used instead of calling the real clientset, which
+	// allows easier unit testing without requiring a full fake clientset.
+	createPolicyFunc func(namespace string, policy *ciliumv2.CiliumNetworkPolicy) (*ciliumv2.CiliumNetworkPolicy, error)
+	deletePolicyFunc func(namespace, name string) error
 }
 
 // NewCiliumClient creates a new Cilium client.
@@ -195,6 +200,14 @@ func (c *CiliumClient) ApplyPolicy(
 	targetDomains []string,
 ) error {
 	policy := c.generatePolicyObject(policyName, namespace, podLabels, infraDNS, infraAPI, targetIPs, targetDomains)
+	if c.createPolicyFunc != nil {
+		_, err := c.createPolicyFunc(namespace, policy)
+		if err != nil {
+			return fmt.Errorf("failed to apply policy: %w", err)
+		}
+		return nil
+	}
+
 	_, err := c.clientset.CiliumV2().CiliumNetworkPolicies(namespace).Create(
 		context.TODO(),
 		policy,
@@ -209,6 +222,13 @@ func (c *CiliumClient) ApplyPolicy(
 // DeletePolicy removes the CiliumNetworkPolicy from the cluster.
 // Returns an error on failure.
 func (c *CiliumClient) DeletePolicy(policyName, namespace string) error {
+	if c.deletePolicyFunc != nil {
+		if err := c.deletePolicyFunc(namespace, policyName); err != nil {
+			return fmt.Errorf("failed to delete policy: %w", err)
+		}
+		return nil
+	}
+
 	err := c.clientset.CiliumV2().CiliumNetworkPolicies(namespace).Delete(
 		context.TODO(),
 		policyName,

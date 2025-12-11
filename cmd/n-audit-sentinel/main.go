@@ -29,6 +29,37 @@ const (
 	logFile = "session.log"
 )
 
+// discoverer abstracts K8s discovery functions for testability.
+type discoverer interface {
+	DiscoverK8sAPI() (string, error)
+	DiscoverDNS(resolveConfPath string) ([]string, error)
+}
+
+// realDiscoverer wraps the actual discovery functions.
+type realDiscoverer struct{}
+
+func (d *realDiscoverer) DiscoverK8sAPI() (string, error) {
+	return discovery.DiscoverK8sAPI()
+}
+
+func (d *realDiscoverer) DiscoverDNS(resolveConfPath string) ([]string, error) {
+	return discovery.DiscoverDNS(resolveConfPath)
+}
+
+// RunSentinelWithDiscoverer extracts core discovery logic for DI testing.
+// Returns (apiServer, dnsServers, error) so tests can validate discovery without full main().
+func RunSentinelWithDiscoverer(disc discoverer) (string, []string, error) {
+	apiServer, err := disc.DiscoverK8sAPI()
+	if err != nil {
+		apiServer = "unknown"
+	}
+	dnsServers, err := disc.DiscoverDNS("/etc/resolv.conf")
+	if err != nil {
+		dnsServers = []string{}
+	}
+	return apiServer, dnsServers, nil
+}
+
 func main() {
 	// Setup signal handling and cancellable context.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -70,21 +101,11 @@ func main() {
 	}
 
 	// Discover Kubernetes environment.
-	apiServer, err := discovery.DiscoverK8sAPI()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[N-Audit] Warning: Failed to discover K8s API: %v\n", err)
-		apiServer = "unknown"
-	} else {
-		fmt.Fprintf(os.Stdout, "[N-Audit] Discovered K8s API Server: %s\n", apiServer)
-	}
+	realDisc := &realDiscoverer{}
+	apiServer, dnsServers, _ := RunSentinelWithDiscoverer(realDisc)
 
-	dnsServers, err := discovery.DiscoverDNS("/etc/resolv.conf")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[N-Audit] Warning: Failed to discover DNS servers: %v\n", err)
-		dnsServers = []string{}
-	} else {
-		fmt.Fprintf(os.Stdout, "[N-Audit] Discovered DNS Servers: %v\n", dnsServers)
-	}
+	fmt.Fprintf(os.Stdout, "[N-Audit] Discovered K8s API Server: %s\n", apiServer)
+	fmt.Fprintf(os.Stdout, "[N-Audit] Discovered DNS Servers: %v\n", dnsServers)
 
 	// Initialize logging infrastructure.
 	if err := os.MkdirAll(logDir, 0700); err != nil {

@@ -17,6 +17,25 @@ Enterprise-grade forensic auditing tool for Kubernetes clusters with cryptograph
 - Penetration testing with scope enforcement
 - Compliance audit trails with cryptographic sealing
 - Red team operations with legally defensible logs
+# N-Audit Sentinel v1.0.0-Beta – Kali Linux Integration Request
+
+## Project Overview
+
+**Name:** N-Audit Sentinel
+**Version:** v1.0.0-Beta
+**Repository:** https://github.com/ITSsafer-DevOps/N-Audit-Sentinel
+**License:** MIT
+**Author:** Kristian Kasnik / ITSsafer-DevOps
+
+## Description
+
+Enterprise-grade forensic auditing tool for Kubernetes clusters with cryptographic log sealing and cloud-native microsegmentation.
+
+### Use Cases
+
+- Penetration testing with scope enforcement
+- Compliance audit trails with cryptographic sealing
+- Red team operations with legally defensible logs
 - Kubernetes security assessments
 - Forensic investigation of cluster activity
 
@@ -56,13 +75,28 @@ Enterprise-grade forensic auditing tool for Kubernetes clusters with cryptograph
 
 ## Verification
 
-Clone and test:
+Clone and test (Go example):
 
-```bash
-git clone https://github.com/ITSsafer-DevOps/N-Audit-Sentinel.git
-cd N-Audit-Sentinel
-make build
-make test
+```go
+// Clone and run build/tests programmatically
+package main
+
+import (
+	"log"
+	"os/exec"
+)
+
+func main() {
+	if err := exec.Command("git", "clone", "https://github.com/ITSsafer-DevOps/N-Audit-Sentinel.git").Run(); err != nil {
+		log.Fatal(err)
+	}
+	if err := exec.Command("make", "build").Run(); err != nil {
+		log.Fatal(err)
+	}
+	if err := exec.Command("make", "test").Run(); err != nil {
+		log.Fatal(err)
+	}
+}
 ```
 
 Expected: All tests pass ✅

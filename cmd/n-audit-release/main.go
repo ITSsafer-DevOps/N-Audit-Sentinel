@@ -18,6 +18,35 @@ import (
 	"path/filepath"
 )
 
+// cmdRunner abstracts exec.Command for testability.
+type cmdRunner interface {
+	Run(name string, args ...string) error
+}
+
+// realCmdRunner implements cmdRunner using exec.Command.
+type realCmdRunner struct{}
+
+func (r *realCmdRunner) Run(name string, args ...string) error {
+	return runCmd(name, args...)
+}
+
+// BuildBinariesWithRunner builds binaries using the provided cmdRunner.
+// This allows tests to inject a fake command runner without actual go build calls.
+func BuildBinariesWithRunner(runner cmdRunner, buildDir string) (sentinelBin, cliBin string, err error) {
+	sentinelBin = filepath.Join(buildDir, "n-audit-sentinel")
+	cliBin = filepath.Join(buildDir, "n-audit")
+
+	fmt.Println("[release] Building binaries for linux/amd64...")
+	if err := runner.Run("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", sentinelBin, "./cmd/n-audit-sentinel"); err != nil {
+		return "", "", fmt.Errorf("failed to build sentinel: %w", err)
+	}
+	if err := runner.Run("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", cliBin, "./cmd/n-audit-cli"); err != nil {
+		return "", "", fmt.Errorf("failed to build cli: %w", err)
+	}
+
+	return sentinelBin, cliBin, nil
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Fprintf(os.Stderr, "usage: n-audit-release <version>\n")
@@ -30,18 +59,17 @@ func main() {
 	}
 
 	// Build output paths
+
 	buildDir, err := os.MkdirTemp("", "n-audit-release-build-")
 	must(err)
 	defer os.RemoveAll(buildDir)
 
-	sentinelBin := filepath.Join(buildDir, "n-audit-sentinel")
-	cliBin := filepath.Join(buildDir, "n-audit")
-
 	// Cross-compile binaries for linux/amd64
-	fmt.Println("[release] Building binaries for linux/amd64...")
-	// Use deterministic build flags for reproducible releases
-	must(runCmd("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", sentinelBin, "./cmd/n-audit-sentinel"))
-	must(runCmd("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", cliBin, "./cmd/n-audit-cli"))
+	realRunner := &realCmdRunner{}
+	sentinelBin, cliBin, err := BuildBinariesWithRunner(realRunner, buildDir)
+	if err != nil {
+		must(err)
+	}
 
 	// Tarball name
 	tarName := fmt.Sprintf("n-audit-sentinel-%s-linux-amd64.tar.gz", version)

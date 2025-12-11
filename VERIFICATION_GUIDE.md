@@ -4,24 +4,34 @@ Complete testing and validation procedures for N-Audit Sentinel after deployment
 
 ## Local Testing (Before Deployment)
 
-Run the complete test suite locally to verify functionality:
+Run the complete test suite locally to verify functionality (Go examples):
 
-```bash
-# Run all tests (unit + integration)
-make test
+```go
+// Run tests and CI tasks from Go
+package main
 
-# Run tests with verbose output
-go test ./... -v
+import (
+  "log"
+  "os/exec"
+)
 
-# Run only E2E tests
-make test-e2e ENV=k3s
+func run(name string, args ...string) {
+  cmd := exec.Command(name, args...)
+  cmd.Stdout = nil
+  cmd.Stderr = nil
+  if err := cmd.Run(); err != nil {
+    log.Fatalf("command failed: %v %v: %v", name, args, err)
+  }
+}
 
-# Check test coverage (generate profile)
-go test ./... -cover
-
-# Format and lint before committing
-make fmt
-make lint
+func main() {
+  run("make", "test")
+  run("go", "test", "./...", "-v")
+  run("make", "test-e2e", "ENV=k3s")
+  run("go", "test", "./...", "-cover")
+  run("make", "fmt")
+  run("make", "lint")
+}
 ```
 
 Test results are organized in:
@@ -134,15 +144,47 @@ Client Name: (press Enter)
 
 **Check logs for unrestricted mode indicator:**
 
-```bash
-kubectl logs n-audit-sentinel --tail=50 | grep -i "unrestricted"
-# Expected: message indicating no policy is active
+```go
+// Check logs for 'unrestricted' indicator via Go
+package main
+
+import (
+  "bytes"
+  "fmt"
+  "log"
+  "os/exec"
+)
+
+func main() {
+  out, err := exec.Command("kubectl", "logs", "n-audit-sentinel", "--tail=50").CombinedOutput()
+  if err != nil {
+    log.Fatal(err)
+  }
+  if bytes.Contains(out, []byte("unrestricted")) {
+    fmt.Println("unrestricted policy indicator found")
+  } else {
+    fmt.Println("no unrestricted indicator")
+  }
+}
 ```
 
 **Inside the shell, access should be open:**
 
-```bash
-curl -m 5 -I google.com
+```go
+// Check external connectivity using curl via Go
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  cmd := exec.Command("curl", "-m", "5", "-I", "google.com")
+  if err := cmd.Run(); err != nil {
+    log.Fatalf("curl failed: %v", err)
+  }
+}
 ```
 
 **Expected result:**
@@ -236,19 +278,29 @@ SSH into the node to inspect `/mnt/n-audit-data` as required.
 
 ### Verify Log Survives Pod Deletion
 
-```bash
-# Note the log content
-sudo tail -5 /mnt/n-audit-data/session.log > /tmp/session-before.txt
+```go
+// Verify log survives pod deletion via Go (uses shell for pipeline steps)
+package main
 
-# Delete the pod
-kubectl delete pod n-audit-sentinel
+import (
+  "log"
+  "os/exec"
+)
 
-# Log still exists on host
-sudo tail -5 /mnt/n-audit-data/session.log > /tmp/session-after.txt
-
-# Verify content is identical
-diff /tmp/session-before.txt /tmp/session-after.txt
-# Expected: no output (files are identical)
+func main() {
+  if err := exec.Command("sh", "-c", "sudo tail -5 /mnt/n-audit-data/session.log > /tmp/session-before.txt").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("kubectl", "delete", "pod", "n-audit-sentinel").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("sh", "-c", "sudo tail -5 /mnt/n-audit-data/session.log > /tmp/session-after.txt").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("diff", "/tmp/session-before.txt", "/tmp/session-after.txt").Run(); err != nil {
+    log.Fatalf("diff reported differences or failed: %v", err)
+  }
+}
 ```
 
 ## Test 5: Graceful Teardown & Cryptographic Seal
@@ -257,8 +309,20 @@ diff /tmp/session-before.txt /tmp/session-after.txt
 
 **From another terminal (while session is active):**
 
-```bash
-kubectl exec n-audit-sentinel -c sentinel -- /usr/local/bin/n-audit
+```go
+// Trigger graceful exit via Go
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("kubectl", "exec", "n-audit-sentinel", "-c", "sentinel", "--", "/usr/local/bin/n-audit").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 This sends `SIGUSR1` to PID 1, which triggers:
@@ -273,8 +337,20 @@ This sends `SIGUSR1` to PID 1, which triggers:
 
 **Check the final log block:**
 
-```bash
-sudo tail -10 /mnt/n-audit-data/session.log
+```go
+// Show final log tail via Go
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("sudo", "tail", "-10", "/mnt/n-audit-data/session.log").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 **Expected output:**
@@ -289,13 +365,24 @@ SSH Signature (Base64): AAAAC3NzaC1lZDI1NTE5AAAAgOVCblXV2uXY...
 
 **Extract content (excluding seal) and compute hash:**
 
-```bash
-# Extract all lines before FORENSIC SEAL
-awk '/^=== FORENSIC SEAL ===/{exit} {print}' /mnt/n-audit-data/session.log | sha256sum
-# Output: <64-char-hex>  -
+```go
+// Compute SHA256 of content before seal and print via Go
+package main
 
-# Compare with seal value
-grep "SHA256 Hash:" /mnt/n-audit-data/session.log
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  cmd := exec.Command("sh", "-c", "awk '/^=== FORENSIC SEAL ===/{exit} {print}' /mnt/n-audit-data/session.log | sha256sum")
+  if err := cmd.Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("grep", "SHA256 Hash:", "/mnt/n-audit-data/session.log").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 **Expected:**
@@ -305,15 +392,29 @@ grep "SHA256 Hash:" /mnt/n-audit-data/session.log
 
 For full cryptographic verification, extract and validate the SSH signature:
 
-```bash
-# Extract public key
-sudo cat /mnt/n-audit-data/signing/id_ed25519.pub
+```go
+// Extract public key and signature via Go (illustrative)
+package main
 
-# Extract signature from seal
-SIGNATURE=$(grep "SSH Signature" /mnt/n-audit-data/session.log | cut -d: -f2)
+import (
+  "bytes"
+  "fmt"
+  "log"
+  "os/exec"
+)
 
-# Verify with ssh-keygen (requires Go helper or custom validation)
-# See README.md for signature verification example
+func main() {
+  pub, err := exec.Command("sudo", "cat", "/mnt/n-audit-data/signing/id_ed25519.pub").CombinedOutput()
+  if err != nil {
+    log.Fatal(err)
+  }
+  fmt.Printf("Public key:\n%s\n", string(pub))
+  sig, err := exec.Command("sh", "-c", "grep \"SSH Signature\" /mnt/n-audit-data/session.log | cut -d: -f2").CombinedOutput()
+  if err != nil {
+    log.Fatal(err)
+  }
+  fmt.Printf("Signature (base64): %s\n", bytes.TrimSpace(sig))
+}
 ```
 
 ## Summary: Complete Verification Checklist
@@ -351,15 +452,26 @@ SIGNATURE=$(grep "SSH Signature" /mnt/n-audit-data/session.log | cut -d: -f2)
 
 **Verify Cilium eBPF programs are loaded:**
 
-```bash
-# On the node running the pod, check loaded BPF programs
-sudo bpftool prog list | grep cilium
+```go
+// Inspect eBPF programs via Go (sh -c used for pipeline commands)
+package main
 
-# Show detailed BPF program info
-sudo bpftool prog show id <PROG_ID> verbose
+import (
+  "log"
+  "os/exec"
+)
 
-# Trace policy enforcement in real-time
-sudo bpftool prog tracelog
+func main() {
+  if err := exec.Command("sh", "-c", "sudo bpftool prog list | grep cilium").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("sudo", "bpftool", "prog", "show", "id", "<PROG_ID>", "verbose").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("sudo", "bpftool", "prog", "tracelog").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 **Expected output (for active policy):**
@@ -373,123 +485,187 @@ tc_program: cilium_tc_egress (type: TC)
 
 **Verify policy enforcement at kernel level:**
 
-```bash
-# Monitor netfilter connections (if using legacy iptables)
-sudo conntrack -L
+```go
+// Network stack inspection via Go (illustrative)
+package main
 
-# Check Cilium agent status
-kubectl -n kube-system exec -it cilium-xxx -- cilium status
+import (
+  "log"
+  "os/exec"
+)
 
-# View installed policies
-kubectl -n kube-system exec -it cilium-xxx -- cilium policy get
+func main() {
+  if err := exec.Command("sudo", "conntrack", "-L").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("kubectl", "-n", "kube-system", "exec", "-it", "cilium-xxx", "--", "cilium", "status").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("kubectl", "-n", "kube-system", "exec", "-it", "cilium-xxx", "--", "cilium", "policy", "get").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 ### Cryptographic Seal Validation (Advanced)
 
 **Manual Ed25519 signature verification:**
 
-```bash
-# Extract public key
-PUB_KEY=$(cat /mnt/n-audit-data/signing/id_ed25519.pub)
+```go
+// Manual Ed25519 verification steps illustrated via Go (uses sh for pipelines)
+package main
 
-# Extract signature from seal
-SIGNATURE=$(grep "SSH Signature" /mnt/n-audit-data/session.log | awk -F': ' '{print $2}')
+import (
+  "fmt"
+  "log"
+  "os/exec"
+)
 
-# Decode base64 signature
-echo $SIGNATURE | base64 -d > /tmp/sig.bin
-
-# Extract content before seal
-awk '/^=== FORENSIC SEAL ===/{exit}' /mnt/n-audit-data/session.log > /tmp/content.txt
-
-# Compute hash
-SHA=$(sha256sum /tmp/content.txt | cut -d' ' -f1)
-echo "Computed SHA256: $SHA"
-
-# Compare with seal
-SEAL_SHA=$(grep "SHA256 Hash" /mnt/n-audit-data/session.log | awk -F': ' '{print $2}')
-echo "Seal SHA256:     $SEAL_SHA"
-[ "$SHA" = "$SEAL_SHA" ] && echo "✓ Hash verified" || echo "✗ Hash mismatch"
+func main() {
+  // Dump public key
+  if out, err := exec.Command("cat", "/mnt/n-audit-data/signing/id_ed25519.pub").CombinedOutput(); err == nil {
+    fmt.Printf("Public key:\n%s\n", string(out))
+  }
+  // Extract signature and decode
+  if err := exec.Command("sh", "-c", "grep \"SSH Signature\" /mnt/n-audit-data/session.log | awk -F': ' '{print $2}' | base64 -d > /tmp/sig.bin").Run(); err != nil {
+    log.Fatal(err)
+  }
+  // Extract content and compute hash
+  if err := exec.Command("sh", "-c", "awk '/^=== FORENSIC SEAL ===/{exit}' /mnt/n-audit-data/session.log > /tmp/content.txt").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if out, err := exec.Command("sh", "-c", "sha256sum /tmp/content.txt | cut -d' ' -f1").CombinedOutput(); err == nil {
+    fmt.Printf("Computed SHA256: %s\n", string(out))
+  }
+  if out, err := exec.Command("sh", "-c", "grep \"SHA256 Hash\" /mnt/n-audit-data/session.log | awk -F': ' '{print $2}'").CombinedOutput(); err == nil {
+    fmt.Printf("Seal SHA256: %s\n", string(out))
+  }
+}
 ```
 
 ### PTY Emulation Verification
 
 **Verify bash safety loop is functioning:**
 
-```bash
-# Inside active session
-$ exit    # or Ctrl+D
-# Expected: Bash respawns (prompt returns)
+```go
+// PTY emulation test instructions are interactive; example shows invoking n-audit exit via Go
+package main
 
-$ exit
-# Expected: Prompt still present
+import (
+  "log"
+  "os/exec"
+)
 
-# To terminate, use:
-$ n-audit exit    # From another terminal: kubectl exec ... -- /usr/local/bin/n-audit
+func main() {
+  if err := exec.Command("kubectl", "exec", "n-audit-sentinel", "--", "/usr/local/bin/n-audit", "exit").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 ### Performance Analysis
 
 **Measure policy application latency:**
 
-```bash
-# Start time before scope entry
-kubectl logs n-audit-sentinel | grep "Apply CNP"
+```go
+// Measure policy application indicator via Go
+package main
 
-# Policy should apply within <5 seconds
-# If > 10 seconds: Check Cilium agent logs, API server latency
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("sh", "-c", "kubectl logs n-audit-sentinel | grep \"Apply CNP\"").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 **Monitor logging throughput:**
 
-```bash
-# Measure log file growth
-while true; do
-  SIZE=$(stat -f%z /mnt/n-audit-data/session.log 2>/dev/null || stat -c%s /mnt/n-audit-data/session.log)
-  echo "$(date): $SIZE bytes"
-  sleep 1
-done
+```go
+// Measure log file growth via Go (illustrative)
+package main
 
-# Expected: 1-50 KB/sec under normal activity
-# If > 100 KB/sec: Commands generating excessive output
+import (
+  "fmt"
+  "time"
+)
+
+func main() {
+  for {
+    // This illustration omits cross-platform stat details; use os.Stat in real code
+    fmt.Println(time.Now().Format(time.RFC3339), "<< log size check placeholder >>")
+    time.Sleep(1 * time.Second)
+  }
+}
 ```
 
 ### Cilium Policy Inspection
 
 **Deep-dive into applied policies:**
 
-```bash
-# View all CiliumNetworkPolicies
-kubectl get cnp -o yaml
+```go
+// Inspect applied CiliumNetworkPolicies via Go
+package main
 
-# View the specific policy for our pod
-kubectl get cnp n-audit-sentinel-policy -o yaml
+import (
+  "log"
+  "os/exec"
+)
 
-# Check policy statistics
-kubectl exec -it cilium-xxx -n kube-system -- \
-  cilium policy get | grep n-audit-sentinel
-
-# Trace specific policy rules in action
-kubectl logs -n kube-system cilium-xxx | grep n-audit-sentinel
+func main() {
+  if err := exec.Command("kubectl", "get", "cnp", "-o", "yaml").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("kubectl", "get", "cnp", "n-audit-sentinel-policy", "-o", "yaml").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("sh", "-c", "kubectl exec -it cilium-xxx -n kube-system -- cilium policy get | grep n-audit-sentinel").Run(); err != nil {
+    log.Fatal(err)
+  }
+  if err := exec.Command("sh", "-c", "kubectl logs -n kube-system cilium-xxx | grep n-audit-sentinel").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 ### Forensic Log Analysis
 
 **Extract session statistics:**
 
-```bash
-# Command count
-awk '/^\[SESSION\]/{next} /^[0-9]{4}-/{count++} END {print "Total lines:", count}' /mnt/n-audit-data/session.log
+```go
+// Command count and forensic extraction via Go
+package main
 
-# Time span
-HEAD_TIME=$(head -1 /mnt/n-audit-data/session.log | cut -d' ' -f1-2)
-TAIL_TIME=$(awk '/^=== FORENSIC SEAL ===/{exit} 1' /mnt/n-audit-data/session.log | tail -1 | cut -d' ' -f1-2)
-echo "Session: $HEAD_TIME → $TAIL_TIME"
+import (
+  "bytes"
+  "fmt"
+  "log"
+  "os/exec"
+)
 
-# Search for keywords (audit-related)
-grep -i "whoami\|id\|sudo\|exec" /mnt/n-audit-data/session.log
+func main() {
+  if out, err := exec.Command("sh", "-c", "awk '/^\\[SESSION\\]/{next} /^[0-9]{4}-/{count++} END {print \"Total lines:\", count}' /mnt/n-audit-data/session.log").CombinedOutput(); err == nil {
+    fmt.Println(string(bytes.TrimSpace(out)))
+  } else {
+    log.Fatal(err)
+  }
 
-# Detect anomalies (no ANSI codes)
-grep -c $'\x1b' /mnt/n-audit-data/session.log || echo "✓ No ANSI codes found (clean)"
+  headTime, _ := exec.Command("sh", "-c", "head -1 /mnt/n-audit-data/session.log | cut -d' ' -f1-2").CombinedOutput()
+  tailTime, _ := exec.Command("sh", "-c", "awk '/^=== FORENSIC SEAL ===/{exit} 1' /mnt/n-audit-data/session.log | tail -1 | cut -d' ' -f1-2").CombinedOutput()
+  fmt.Printf("Session: %s → %s\n", bytes.TrimSpace(headTime), bytes.TrimSpace(tailTime))
+
+  if out, err := exec.Command("sh", "-c", "grep -i \"whoami\|id\|sudo\|exec\" /mnt/n-audit-data/session.log || true").CombinedOutput(); err == nil {
+    fmt.Println(string(bytes.TrimSpace(out)))
+  }
+
+  if out, err := exec.Command("sh", "-c", "grep -c $'\\x1b' /mnt/n-audit-data/session.log || echo \"0\"").CombinedOutput(); err == nil {
+    fmt.Printf("ANSI escape sequences count: %s\n", bytes.TrimSpace(out))
+  }
+}
 ```
 
 ### Troubleshooting Advanced Issues

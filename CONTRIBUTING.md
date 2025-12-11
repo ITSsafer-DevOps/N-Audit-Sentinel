@@ -9,34 +9,54 @@ This repository accepts contributions under the following guidelines:
 ## Development Workflow
 
 ### 1. Setup
-Clone the repository and ensure Go 1.25+ is installed:
-```bash
-git clone https://github.com/ITSsafer-DevOps/N-Audit-Sentinel.git
-cd N-Audit-Sentinel
-go mod tidy
+Clone the repository and ensure Go 1.25+ is installed. Example (Go):
+
+```go
+// Clone repository and run go mod tidy programmatically (illustrative)
+package main
+
+import (
+	"log"
+	"os/exec"
+)
+
+func main() {
+	if err := exec.Command("git", "clone", "https://github.com/ITSsafer-DevOps/N-Audit-Sentinel.git").Run(); err != nil {
+		log.Fatal(err)
+	}
+	if err := exec.Command("bash", "-c", "cd N-Audit-Sentinel && go mod tidy").Run(); err != nil {
+		log.Fatal(err)
+	}
+}
 ```
 
 ### 2. Running Tests Locally
-Before submitting a pull request, run the full test suite:
+Before submitting a pull request, run the full test suite. Example (Go):
 
-```bash
-# Format code
-make fmt
+```go
+// Run common development targets from Go
+package main
 
-# Lint code (runs `go vet` and basic static analysis)
-make lint
+import (
+	"log"
+	"os/exec"
+)
 
-# Run all unit and integration tests
-make test
+func run(name string, args ...string) {
+	cmd := exec.Command(name, args...)
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("command failed: %v %v: %v", name, args, err)
+	}
+}
 
-# Run end-to-end tests (requires K3s environment or set RUN_E2E=true to skip external deps)
-make test-e2e ENV=k3s
-
-# Security vulnerability scanning (if govulncheck is installed)
-make security-scan
-
-# Verify dependencies (go, docker, kubectl availability)
-make verify-deps
+func main() {
+	run("make", "fmt")
+	run("make", "lint")
+	run("make", "test")
+	run("make", "test-e2e", "ENV=k3s")
+	run("make", "security-scan")
+	run("make", "verify-deps")
+}
 ```
 
 ### 3. Test Coverage

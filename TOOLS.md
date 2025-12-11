@@ -21,18 +21,40 @@ Discovered tools (from `cmd/`):
 
 Usage examples
 
-Build a single tool:
+Build a single tool (Go example):
 
-```bash
-go build -o out/n-audit-sentinel ./cmd/n-audit-sentinel
+```go
+// Build a single tool programmatically
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("go", "build", "-o", "out/n-audit-sentinel", "./cmd/n-audit-sentinel").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
-Create a release tarball (example):
+Create a release tarball (Go example):
 
-```bash
-go run ./cmd/n-audit-release v1.0.0-Beta
-# or
-go run ./cmd/release-manager --version v1.0.0-Beta --out out
+```go
+// Run release-manager from Go
+package main
+
+import (
+  "log"
+  "os/exec"
+)
+
+func main() {
+  if err := exec.Command("go", "run", "./cmd/release-manager", "--version", "v1.0.0-Beta", "--out", "out").Run(); err != nil {
+    log.Fatal(err)
+  }
+}
 ```
 
 Notes

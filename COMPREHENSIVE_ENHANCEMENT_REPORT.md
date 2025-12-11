@@ -46,7 +46,49 @@ Total: 10+ Mermaid diagrams across the documentation set.
 
 - Ensured docs use Go examples (no lingering bash code blocks in updated files).
 - Created a small runnable helper `cmd/deploy-helper/main.go` to prepare storage and keys locally.
-- Updated coverage metric in `README.md` to reflect current 76.5%.
+- Added unit tests for `cmd/deploy-helper` that exercise `PrepareStorageAndKeysWithKeygen` (success and error paths); tests pass locally.
+- Added unit tests for `cmd/n-audit-cli` covering the new `SendSealSignalWithFinder` helper; tests pass locally and package coverage reported `42.9%`.
+- Added unit tests for `cmd/n-audit-sentinel` with fake discoverer (K8s API + DNS discovery); tests pass locally.
+- Added unit tests for `cmd/n-audit-release` with fake cmdRunner (build success + failure paths); tests pass locally.
+
+## Latest test & coverage results (2025-12-11 FINAL RUN)
+
+- Ran full test suite: `go test ./... -coverprofile=coverage.out -v` and generated function-level summary with `go tool cover -func=coverage.out`.
+- **Total repository coverage: 49.5%** (improved from 46.8% baseline)
+- Per-package highlights:
+	- `cmd/deploy-helper`: 27.6%
+	- `cmd/n-audit-cli`: 42.9%
+	- `cmd/n-audit-release`: 10.8%
+	- `cmd/n-audit-sentinel`: 4.3%
+	- `internal/signature`: 87.0%
+	- `internal/seal`: 87.5%
+	- `internal/policy`: 72.6%
+	- `internal/backupmgr`: 80.0%
+	- `internal/cilium`: 100.0%
+	- `internal/config`: 100.0%
+	- `internal/discovery`: 86.4%
+	- `internal/k8s`: 100.0%
+	- `internal/logger`: ~82.6%
+	- `internal/logging`: 100.0%
+	- `internal/recorder`: 85.4%
+	- `internal/releasemgr`: 78.3%
+	- `internal/tui`: 77.4%
+	- `internal/validation`: 76.9%
+
+These results were saved to `coverage.out` and `coverage-final.txt` in the repository root.
+
+## Mermaid diagrams validation
+
+- Performed a repository scan of Markdown files containing ` ```mermaid ` blocks and validated each block for basic Mermaid syntax clues (presence of `graph`, `flowchart`, `sequenceDiagram`, or `sequence` keywords).
+- Files checked and found OK:
+	- `README.md` (multiple diagrams)
+	- `DEPLOYMENT.md` (pipeline + diagrams)
+	- `VERIFICATION_GUIDE.md` (testing pipeline)
+	- `SECURITY.md` (threat model)
+	- `TESTING_AND_VERIFICATION.md` (CI/testing diagrams)
+	- `docs/ARCHITECTURE_DIAGRAMS.md` (CI/CD, package flow, sequences)
+
+No obvious syntax problems were detected by a lightweight static scan. Recommendation: perform a visual check on GitHub to confirm rendering for each file (GitHub's Mermaid renderer is authoritative).
 
 ## Git actions
 

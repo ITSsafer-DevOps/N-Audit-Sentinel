@@ -141,20 +141,50 @@ The project includes two production-grade Go utilities that replace legacy shell
 **Location:** `cmd/release-manager`  
 **Purpose:** Builds binaries with deterministic flags, packages them into `.tar.gz` archives, and generates SHA256 checksums.
 
-**Example:**
-```bash
-go run ./cmd/release-manager --version v1.0.0-Beta --out out
-# Creates: n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz
-#          n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz.sha256
+**Example (Go):**
+```go
+// Run the release-manager tool programmatically (executes the same command)
+package main
+
+import (
+    "log"
+    "os"
+    "os/exec"
+)
+
+func main() {
+    cmd := exec.Command("go", "run", "./cmd/release-manager", "--version", "v1.0.0-Beta", "--out", "out")
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    if err := cmd.Run(); err != nil {
+        log.Fatal(err)
+    }
+}
 ```
 
 ### backup-manager
 **Location:** `cmd/backup-manager`  
 **Purpose:** Creates a Gold Master source archive using `git archive` and generates SHA256 checksums for reproducibility.
 
-**Example:**
-```bash
-go run ./cmd/backup-manager --out gold-master-20251210T235959Z.tar.gz --ref HEAD
+**Example (Go):**
+```go
+// Run the backup-manager tool programmatically
+package main
+
+import (
+    "log"
+    "os"
+    "os/exec"
+)
+
+func main() {
+    cmd := exec.Command("go", "run", "./cmd/backup-manager", "--out", "gold-master-20251210T235959Z.tar.gz", "--ref", "HEAD")
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    if err := cmd.Run(); err != nil {
+        log.Fatal(err)
+    }
+}
 ```
 
 Both utilities are tested, minimal, and designed for local development and CI pipelines. See `cmd/*/README.md` for complete usage documentation.
@@ -256,26 +286,78 @@ For complete deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md). For ve
 ### Minimal 5-Step Workflow
 
 1. **Build Release**
-   ```bash
-   make release VERSION=v1.0.0-Beta
+   ```go
+   // Build release from Go
+   package main
+
+   import (
+       "log"
+       "os/exec"
+   )
+
+   func main() {
+       if err := exec.Command("make", "release", "VERSION=v1.0.0-Beta").Run(); err != nil {
+           log.Fatal(err)
+       }
+   }
    ```
 
 2. **Prepare Node Storage**
+```go
+// Prepare node storage and generate Ed25519 key via Go
+package main
+
+import (
+    "log"
+    "os/exec"
+)
+
+func main() {
+    if err := exec.Command("sudo", "mkdir", "-p", "/mnt/n-audit-data/signing").Run(); err != nil {
+        log.Fatal(err)
+    }
+    if err := exec.Command("sudo", "ssh-keygen", "-t", "ed25519", "-N", "", "-f", "/mnt/n-audit-data/signing/id_ed25519", "-C", "n-audit").Run(); err != nil {
+        log.Fatal(err)
+    }
+    if err := exec.Command("sudo", "chmod", "600", "/mnt/n-audit-data/signing/id_ed25519").Run(); err != nil {
+        log.Fatal(err)
+    }
+}
 ```
-   sudo mkdir -p /mnt/n-audit-data/signing
-   sudo ssh-keygen -t ed25519 -N "" -f /mnt/n-audit-data/signing/id_ed25519 -C "n-audit"
-   sudo chmod 600 /mnt/n-audit-data/signing/id_ed25519
-   ```
 
 3. **Create ServiceAccount + RBAC**
+```go
+// Apply ServiceAccount manifest via Go
+package main
+
+import (
+    "log"
+    "os/exec"
+)
+
+func main() {
+    if err := exec.Command("kubectl", "apply", "-f", "beta-test-deployment/serviceaccount.yaml").Run(); err != nil {
+        log.Fatal(err)
+    }
+}
 ```
-   kubectl apply -f beta-test-deployment/serviceaccount.yaml
-   ```
 
 4. **Deploy Pod**
+```go
+// Apply pod manifest via Go
+package main
+
+import (
+    "log"
+    "os/exec"
+)
+
+func main() {
+    if err := exec.Command("kubectl", "apply", "-f", "beta-test-deployment/pod-fixed.yaml").Run(); err != nil {
+        log.Fatal(err)
+    }
+}
 ```
-   kubectl apply -f beta-test-deployment/pod-fixed.yaml
-   ```
 
 5. **Attach and Operate**
 ```
@@ -385,13 +467,29 @@ See [LICENSE](LICENSE) for full text.
 
 For running N-Audit Sentinel as a local systemd service (without Kubernetes), install the provided unit file:
 
-```bash
-sudo cp deploy/n-audit-sentinel.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now n-audit-sentinel.service
+```go
+// Install systemd unit and monitor logs via Go (requires sudo privileges)
+package main
 
-# Monitor logs
-sudo journalctl -u n-audit-sentinel -f
+import (
+    "log"
+    "os/exec"
+)
+
+func main() {
+    if err := exec.Command("sudo", "cp", "deploy/n-audit-sentinel.service", "/etc/systemd/system/").Run(); err != nil {
+        log.Fatal(err)
+    }
+    if err := exec.Command("sudo", "systemctl", "daemon-reload").Run(); err != nil {
+        log.Fatal(err)
+    }
+    if err := exec.Command("sudo", "systemctl", "enable", "--now", "n-audit-sentinel.service").Run(); err != nil {
+        log.Fatal(err)
+    }
+    if err := exec.Command("sudo", "journalctl", "-u", "n-audit-sentinel", "-f").Run(); err != nil {
+        log.Fatal(err)
+    }
+}
 ```
 
 ### Configuration
