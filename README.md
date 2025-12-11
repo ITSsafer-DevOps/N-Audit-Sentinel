@@ -101,6 +101,13 @@ LinkedIn: linkedin.com/in/kristián-kašník-03056a377
 **LinkedIn:** linkedin.com/in/kristián-kašník-03056a377  
 **License:** MIT License (Open Source)
 
+<!-- Badges -->
+[![Release](https://img.shields.io/github/v/release/ITSsafer-DevOps/N-Audit-Sentinel?label=release)](https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/ITSsafer-DevOps/N-Audit-Sentinel/ci.yml?branch=main&label=ci)](https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/actions)
+[![License](https://img.shields.io/github/license/ITSsafer-DevOps/N-Audit-Sentinel)](LICENSE)
+
+**Diagrams:** All embedded Mermaid diagrams validated and left as code blocks for rendering on GitHub. See architecture diagrams below.
+
 ### Repository Contents
 This repository contains:
 - Complete Go source code for the N-Audit Sentinel application
