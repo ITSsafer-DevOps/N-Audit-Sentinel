@@ -11,6 +11,7 @@
 
 **Developer:** Kristián Kašník  
 **Contact:** itssafer@itssafer.org  
+**LinkedIn:** linkedin.com/in/kristián-kašník-03056a377  
 **License:** MIT License (Open Source)
 
 ### Repository Contents
