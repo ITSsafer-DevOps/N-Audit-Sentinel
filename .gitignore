@@ -49,3 +49,7 @@ terraform.tfstate*
 .tmp/
 terraform.tfvars
 logs/
+
+# Release artifacts (managed via GitHub Releases API for large files)
+releases/*.tar.gz
+releases/*.sha256
