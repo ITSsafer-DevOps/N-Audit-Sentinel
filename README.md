@@ -105,6 +105,7 @@ LinkedIn: linkedin.com/in/kristian-kasnik-03056a377
 [![Release](https://img.shields.io/github/v/release/ITSsafer-DevOps/N-Audit-Sentinel?label=release)](https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/ITSsafer-DevOps/N-Audit-Sentinel/ci.yml?branch=main&label=ci)](https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/actions)
 [![License](https://img.shields.io/github/license/ITSsafer-DevOps/N-Audit-Sentinel)](LICENSE)
+[![Coverage Status](https://img.shields.io/badge/Coverage-10.2%25-brightgreen)](COVERAGE_REPORT.md)
 
 **Diagrams:** All embedded Mermaid diagrams validated and left as code blocks for rendering on GitHub. See architecture diagrams below.
 
