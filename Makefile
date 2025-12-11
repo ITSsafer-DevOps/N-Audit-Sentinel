@@ -1,11 +1,13 @@
 SHELL := /bin/bash
+SHELL := /bin/bash
 GO := go
 BINARY := bin/n-audit-sentinel
 VERSION ?= v1.0.0-Beta
 
 BIN_DIR := bin
+RELEASE_DIR := releases
 
-.PHONY: all build clean fmt lint test test-e2e release verify-deps security-scan help
+.PHONY: all build clean fmt lint test test-e2e release verify-deps security-scan help backup-final
 
 all: build
 
@@ -18,7 +20,7 @@ build:
 
 clean:
 	@echo "Cleaning artifacts..."
-	rm -rf $(BIN_DIR) *.tar.gz *.sha256
+	rm -rf $(BIN_DIR) $(RELEASE_DIR)/*.tar.gz $(RELEASE_DIR)/*.sha256
 
 fmt:
 	@echo "Formatting code..."
@@ -59,12 +61,19 @@ verify-deps:
 
 release: clean build
 	@echo "Creating release artifacts..."
-	tar -czf n-audit-sentinel-beta-bin.tar.gz -C $(BIN_DIR) n-audit-sentinel
-	sha256sum n-audit-sentinel-beta-bin.tar.gz > n-audit-sentinel-beta-bin.tar.gz.sha256
-	tar --exclude='.git' --exclude='$(BIN_DIR)' --exclude='.terraform' -czf n-audit-sentinel-beta-source-code.tar.gz .
-	sha256sum n-audit-sentinel-beta-source-code.tar.gz > n-audit-sentinel-beta-source-code.tar.gz.sha256
-	@echo "Release artifacts created:"
-	@ls -lh n-audit-sentinel-beta-* | awk '{print "  " $$9, "(" $$5 ")"}'
+	@mkdir -p $(RELEASE_DIR)
+	tar -czf $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz -C $(BIN_DIR) n-audit-sentinel
+	sha256sum $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz.sha256
+	tar --exclude='.git' --exclude='$(BIN_DIR)' --exclude='.terraform' -czf $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-source.tar.gz .
+	sha256sum $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-source.tar.gz > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-source.tar.gz.sha256
+	@echo "Release artifacts created:"; ls -lh $(RELEASE_DIR) | awk '{print "  " $$9, "(" $$5 ")"}'
+
+backup-final: clean
+	@echo "Creating final deterministic backup (gold master)"
+	@mkdir -p $(RELEASE_DIR)
+	git archive --format=tar --prefix=n-audit-sentinel-$(VERSION)-source/ HEAD | gzip -9 > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz
+	sha256sum $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz.sha256
+	@echo "Final backup stored in $(RELEASE_DIR)/"
 
 help:
 	@echo "N-Audit Sentinel - Makefile Targets"
@@ -81,7 +90,8 @@ help:
 	@echo "  make verify-deps      Check for required tools"
 	@echo ""
 	@echo "Release:"
-	@echo "  make release          Create tarballs with checksums"
+	@echo "  make release          Create tarballs with checksums (in releases/)"
+	@echo "  make backup-final     Create deterministic goldmaster backup (in releases/)"
 	@echo "  make clean            Remove build artifacts"
 	@echo ""
 	@echo "Examples:"

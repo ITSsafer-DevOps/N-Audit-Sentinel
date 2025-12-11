@@ -1,128 +1,51 @@
 # Binaries
 /bin/
 /*.tar.gz
-/*.sha256
-
-# IDE
-.vscode/
-.idea/
-
-# Go
-/vendor/
-*.test
-
-# Local
-*.local
-# Go build artifacts
+# Binaries and build artifacts
 bin/
 out/
 dist/
 build/
-*.exe
-*.dll
-*.so
-*.dylib
-*.test
-
-# Go module/vendor (optional)
-vendor/
-
-# Generated files
-*.log
-coverage.*
-*.cover
-*.gcov
-
-# Environment & secrets
-.env
-.env.*
-*.key
-*.pem
-
-# Editor/IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS junk
-.DS_Store
-Thumbs.db
-
-# Coverage files and temporary output
-coverage*.out
-*.out
-
-# Terraform local state (if added later)
-.terraform/
-terraform.tfstate*
-
-# Misc
-.tmp/
-terraform.tfvars
-n-audit-release
-logs/
-
-# Ignore releases artifacts but keep checksums tracked
-releases/
-!releases/*.sha256
-
-# Ignore build output binaries in root
 n-audit-sentinel
 n-audit
-# Go build artifacts
-bin/
-out/
-dist/
-build/
-*.exe
-*.dll
-*.so
-*.dylib
-*.test
 
-# Go module/vendor (optional)
-vendor/
-
-# Generated files
-*.log
-coverage.*
-*.cover
-*.gcov
-
-# Environment & secrets
-.env
-.env.*
-*.key
-*.pem
-
-# Editor/IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS junk
-.DS_Store
-Thumbs.db
+# Release artifacts (store in releases/ and track checksums if needed)
+releases/
+!releases/*.sha256
 
 # Archives
 *.tar.gz
 *.zip
 
-# Coverage files and temporary output
+# Generated files and coverage
+*.log
+coverage.*
 coverage*.out
+*.cover
+*.gcov
 *.out
 
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Terraform local state (if added later)
+# OS
+.DS_Store
+Thumbs.db
+
+# Terraform local state
 .terraform/
 terraform.tfstate*
+
+# Environment & secrets
+.env
+.env.*
+*.key
+*.pem
 
 # Misc
 .tmp/
 terraform.tfvars
-n-audit-release
-*.sha256
 logs/
-n-audit-sentinel
