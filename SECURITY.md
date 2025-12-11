@@ -58,30 +58,37 @@ Fixes will be released through standard GitHub releases and distribution package
 Contact: itssafer@itssafer.org
 
 We credit reporters who wish to be acknowledged, unless they request anonymity.
-# Security Policy
 
-Responsible disclosure
+## Threat Model (High Level)
 
-We appreciate reports of security vulnerabilities. To report a vulnerability, please follow these steps:
+```mermaid
+graph TB
+	User["👤 Pentester / Auditor"] -->|kubectl attach| Pod["🔷 N-Audit Sentinel Pod (PID 1)"]
+	Pod -->|writes| Host["💾 HostPath (/mnt/n-audit-data)"]
+	Pod -->|applies| Cilium["🔌 Cilium CNI (CiliumNetworkPolicy)"]
+	Attacker["⚠️ Malicious Container"] -. attempt -> Pod
+	Attacker -. lateral -> Host
+	Note["Threats: Key theft, log tampering, RBAC misuse, eBPF escalation"]
+	style Pod fill:#4A90E2,stroke:#2E5C8A,color:#fff
+	style Cilium fill:#F5A623,stroke:#B8770B,color:#000
+	style Host fill:#50E3C2,stroke:#2E8B74,color:#000
+	style Attacker fill:#D0021B,stroke:#8B0000,color:#fff
+```
 
-1. Do not open a public issue. Instead, contact the maintainers privately via email: itssafer@itssafer.org
-2. **LinkedIn:** linkedin.com/in/kristian-kasnik-03056a377
-3. Include a clear description, reproduction steps, affected versions, and any PoC code if available.
-4. We will acknowledge receipt within 72 hours and provide a timeline for fixes.
+## Operational Security Checks (Go)
 
-Please do NOT include any sensitive data when reporting publicly.
+Example: verify signing key permissions and presence programmatically.
 
-Disclosure timeline
-
-- We aim to provide a fix and security advisory within 30 days for severities classified as high/critical.
-- For coordination and responsible disclosure, we reserve the right to extend the timeline in case of complex fixes.
-
-Credit
-
-We will credit reporters who agree to be acknowledged in the release notes, unless they request anonymity.
-
-✓ make build       — 3 binaries compiled successfully
-✓ make test        — 9 tests PASSED, 1 test SKIPPED (E2E without cluster)
-✓ make fmt         — Code formatted cleanly
-✓ make lint        — go vet check passed
-✓ make test-e2e    — E2E framework ready (ENV=k3s)
+```go
+package main
+import (
+	"fmt"
+	"os"
+)
+func main(){
+	info, err := os.Stat("/mnt/n-audit-data/signing/id_ed25519")
+	if err != nil { fmt.Println("missing key") ; os.Exit(2) }
+	if info.Mode().Perm() != 0600 { fmt.Println("bad perms", info.Mode()) ; os.Exit(3) }
+	fmt.Println("private key present and permissions OK")
+}
+```

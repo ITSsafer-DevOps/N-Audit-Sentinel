@@ -53,11 +53,16 @@ After the pod starts, confirm that it discovered the Kubernetes API server and D
 
 ### Check pod logs
 
-```bash
-kubectl logs n-audit-sentinel
+Programmatic log inspection example (see `TESTING_AND_VERIFICATION.md` for full flows):
+
+```go
+package main
+import ("fmt"; "os/exec")
+func main(){ out,_ := exec.Command("kubectl","logs","n-audit-sentinel").CombinedOutput(); fmt.Println(string(out)) }
 ```
 
 **Expected output (in logs):**
+
 ```
 [N-Audit] Discovered K8s API Server: 10.43.0.1:443
 [N-Audit] Discovered DNS Servers: [10.43.0.10]
@@ -81,8 +86,12 @@ Test that Cilium policies correctly enforce scope boundaries.
 
 **Start a session with defined scope:**
 
-```bash
-kubectl attach -it n-audit-sentinel -c sentinel
+Attach example (Go wrapper):
+
+```go
+cmd := exec.Command("kubectl","attach","-it","n-audit-sentinel","-c","sentinel")
+cmd.Stdin = os.Stdin; cmd.Stdout = os.Stdout; cmd.Stderr = os.Stderr
+cmd.Run()
 ```
 
 **Follow TUI prompts:**
@@ -96,15 +105,12 @@ Client Name: <client-name>
 
 **Inside the shell, test policy enforcement:**
 
-```bash
-# In-scope should PASS
-ping -c 2 8.8.8.8
+Run the same checks from an attached shell or via `kubectl exec`. Example programmatic checks:
 
-# Out-of-scope should FAIL
-ping -c 2 1.1.1.1
-
-# L7 domain access should FAIL
-curl -m 5 -I google.com || echo "curl blocked (expected)"
+```go
+exec.Command("kubectl","exec","n-audit-sentinel","--","ping","-c","2","8.8.8.8").Run()
+exec.Command("kubectl","exec","n-audit-sentinel","--","ping","-c","2","1.1.1.1").Run()
+exec.Command("kubectl","exec","n-audit-sentinel","--","curl","-m","5","-I","google.com").Run()
 ```
 
 **Expected results:**
@@ -116,9 +122,7 @@ curl -m 5 -I google.com || echo "curl blocked (expected)"
 
 **Start a session without specifying scope:**
 
-```bash
-kubectl attach -it n-audit-sentinel -c sentinel
-```
+Attach using the Go example above or run `kubectl attach -it n-audit-sentinel -c sentinel` interactively.
 
 **Follow TUI prompts (press Enter through all):**
 ```
@@ -147,32 +151,28 @@ curl -m 5 -I google.com
 
 ### Debugging Network Policy Issues
 
-```bash
-# View applied Cilium policies
-kubectl get ciliumnetworkpolicies
+Programmatic checks (examples):
 
-# Describe the policy
-kubectl describe cnp n-audit-sentinel-policy
-
-# Check Cilium agent logs
-kubectl logs -n kube-system -l k8s-app=cilium | grep n-audit
+```go
+out,_ := exec.Command("kubectl","get","ciliumnetworkpolicies").CombinedOutput(); fmt.Println(string(out))
+out,_ = exec.Command("kubectl","describe","cnp","n-audit-sentinel-policy").CombinedOutput(); fmt.Println(string(out))
+out,_ = exec.Command("kubectl","logs","-n","kube-system","-l","k8s-app=cilium").CombinedOutput(); fmt.Println(string(out))
 ```
 
 ## Test 3: Verify Logging Integrity
 
 ### Real-time Log Tailing
 
-**From inside the pod:**
-```bash
-# Execute while session is active
-kubectl exec -it n-audit-sentinel -- tail -f /var/lib/n-audit/session.log
+**From inside the pod (programmatic):**
+
+```go
+cmd := exec.Command("kubectl","exec","-it","n-audit-sentinel","--","tail","-f","/var/lib/n-audit/session.log")
+cmd.Stdout = os.Stdout; cmd.Stderr = os.Stderr; cmd.Run()
 ```
 
 **From the host (via hostPath):**
-```bash
-# Execute on the node running the pod
-sudo tail -f /mnt/n-audit-data/session.log
-```
+
+Run `sudo tail -f /mnt/n-audit-data/session.log` on the node that hosts the pod.
 
 ### Log Format Validation
 
@@ -221,16 +221,13 @@ kubectl exec n-audit-sentinel -- \
 
 Find the node running the pod and inspect the hostPath:
 
-```bash
-# Step 1: Find which node is running the pod
-kubectl get pod n-audit-sentinel -o wide
-# Output shows NODE column
+Programmatic example to discover the node (then inspect host manually or via orchestration):
 
-# Step 2: SSH to that node and inspect hostPath
-ssh <node-ip>
-sudo ls -lah /mnt/n-audit-data/
-sudo tail -n 50 /mnt/n-audit-data/session.log
+```go
+out,_ := exec.Command("kubectl","get","pod","n-audit-sentinel","-o","wide").CombinedOutput(); fmt.Println(string(out))
 ```
+
+SSH into the node to inspect `/mnt/n-audit-data` as required.
 
 **Expected:**
 - `/mnt/n-audit-data/` exists and is readable

@@ -499,10 +499,6 @@ SSH Signature (Base64): <base64-encoded 64-byte signature>
 ### PTY Handling & Terminal Emulation
 
 **PTY Master/Slave Architecture:**
-- N-Audit opens `/dev/ptmx` for master side
-- Spawns `/bin/bash` with slave side attached
-- Raw mode: Disables canonical input processing
-- Direct pass-through of data between user terminal and bash
 
 **Safety Loop Implementation:**
 ```go
@@ -521,18 +517,167 @@ for {
 ```
 Ensures `exit` or Ctrl+D doesn't terminate the pod.
 
+## Ultimate Architecture Diagram (3 Layers)
+
+### Layer 1: User & Kubernetes Interface
+
+```mermaid
+graph TB
+    subgraph user["User Layer"]
+        Pentester["👤 Pentester/Auditor"]
+        Client["👥 Client/Organization"]
+    end
+    
+    subgraph k8s["Kubernetes Layer"]
+        kubectl["🔧 kubectl"]
+        RBAC["🔐 RBAC/ServiceAccount"]
+        API["☁️ Kubernetes API<br/>10.43.0.1:443"]
+        DNSServer["🌐 CoreDNS<br/>10.43.0.10"]
+    end
+    
+    Pentester -->|kubectl run/attach| kubectl
+    kubectl -->|authenticate| RBAC
+    RBAC -->|authorized| API
+    kubectl -->|resolve| DNSServer
+    
+    style Pentester fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff
+    style Client fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff
+    style kubectl fill:#50E3C2,stroke:#2E8B74,stroke-width:2px,color:#000
+    style RBAC fill:#F5A623,stroke:#B8770B,stroke-width:2px,color:#000
+    style API fill:#E8F4F8,stroke:#4A90E2,stroke-width:2px,color:#000
+    style DNSServer fill:#E8F4F8,stroke:#4A90E2,stroke-width:2px,color:#000
+```
+
+### Layer 2: N-Audit Sentinel Pod (Internal Components)
+
+```mermaid
+graph TB
+    subgraph pod["🔷 N-Audit Sentinel Pod (PID 1 Runtime)"]
+        TUI["📊 TUI Module<br/>Banner & Prompts<br/>Input Validation"]
+        Discovery["🔍 Discovery Engine<br/>K8s API Detection<br/>DNS Resolution"]
+        PolicyEngine["⚔️ Policy Engine<br/>3-Zone Generation<br/>Cilium Integration"]
+        Logger["📝 Logger<br/>ANSI Stripping<br/>Timestamp Injection<br/>O_SYNC Writes"]
+        Recorder["🎙️ PTY Recorder<br/>Session Capture<br/>Safety Loop<br/>Bash Respawn"]
+        Signature["🔒 Signature Module<br/>SHA256 Hashing<br/>Ed25519 Signing<br/>Seal Appending"]
+        Validation["✅ Validation<br/>IP/CIDR/Domain<br/>Format Checking"]
+    end
+    
+    TUI -->|collects scope| Discovery
+    Discovery -->|K8s config| PolicyEngine
+    PolicyEngine -->|creates rules| Signature
+    Recorder -->|PTY data| Logger
+    Logger -->|sanitized logs| Signature
+    Validation -->|validates scope| PolicyEngine
+    
+    style TUI fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff
+    style Discovery fill:#50E3C2,stroke:#2E8B74,stroke-width:2px,color:#000
+    style PolicyEngine fill:#F5A623,stroke:#B8770B,stroke-width:2px,color:#000
+    style Logger fill:#7ED321,stroke:#5FA818,stroke-width:2px,color:#000
+    style Recorder fill:#9013FE,stroke:#6B0DB8,stroke-width:2px,color:#fff
+    style Signature fill:#BD10E0,stroke:#8B0BA8,stroke-width:2px,color:#fff
+    style Validation fill:#50E3C2,stroke:#2E8B74,stroke-width:2px,color:#000
+```
+
+### Layer 3: External Integration Points
+
+```mermaid
+graph TB
+    subgraph external["External Systems & Storage"]
+        Cilium["🔌 Cilium CNI<br/>NetworkPolicy CRD<br/>L3/L7 Enforcement"]
+        HostPath["💾 HostPath Mount<br/>/mnt/n-audit-data<br/>Persistent Logs"]
+        SSH["🔑 SSH Keys<br/>Ed25519 Private Key<br/>Signing Material"]
+        K8sAPI["☁️ Kubernetes API<br/>Policy Management<br/>Service Discovery"]
+    end
+    
+    Cilium -->|policies applied| HostPath
+    HostPath -->|signs logs| SSH
+    K8sAPI -->|manages policies| Cilium
+    
+    style Cilium fill:#F5A623,stroke:#B8770B,stroke-width:2px,color:#000
+    style HostPath fill:#50E3C2,stroke:#2E8B74,stroke-width:2px,color:#000
+    style SSH fill:#D0021B,stroke:#8B0000,stroke-width:2px,color:#fff
+    style K8sAPI fill:#E8F4F8,stroke:#4A90E2,stroke-width:2px,color:#000
+```
+
+## Data Flow Diagram (Session Lifecycle)
+
+```mermaid
+graph LR
+    subgraph init["Initialization Phase"]
+        A["Pod Start<br/>(PID 1)"]
+        B["Discover K8s API"]
+        C["Discover DNS"]
+        D["Initialize Logger"]
+    end
+    
+    subgraph interaction["Interaction Phase"]
+        E["Display TUI Banner"]
+        F["Collect Scope"]
+        G["Validate Scope"]
+        H["Generate 3-Zone Policy"]
+    end
+    
+    subgraph operation["Operation Phase"]
+        I["Spawn /bin/bash"]
+        J["Capture PTY Data"]
+        K["Strip ANSI<br/>Add Timestamps"]
+        L["User Commands<br/>(in scope)"]
+    end
+    
+    subgraph teardown["Teardown Phase"]
+        M["User: n-audit exit"]
+        N["Compute SHA256"]
+        O["SSH Sign Hash"]
+        P["Append FORENSIC SEAL"]
+        Q["Delete Policy"]
+        R["Pod Cleanup<br/>Exit 0"]
+    end
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L -->|loop| J
+    L --> M
+    M --> N
+    N --> O
+    O --> P
+    P --> Q
+    Q --> R
+    
+    style A fill:#4A90E2,color:#fff,stroke-width:2px
+    style H fill:#F5A623,color:#000,stroke-width:2px
+    style L fill:#7ED321,color:#000,stroke-width:2px
+    style P fill:#BD10E0,color:#fff,stroke-width:2px
+    style R fill:#50E3C2,color:#000,stroke-width:2px
+```
+
+## Component Interaction Matrix
+
+| Component | Depends On | Used By | Critical Path |
+|-----------|-----------|---------|----------------|
+| **TUI** | logger, validation | discovery | Scope collection → validation |
+| **Discovery** | K8s API, DNS | policy engine | Auto-detection of cluster services |
+| **Policy Engine** | validation, discovery | Cilium CNI | Rule generation & application |
+| **Logger** | ANSI regex | recorder, signature | Real-time log sanitization |
+| **Recorder** | logger, signature | PTY layer | Command capture & safety loop |
+| **Signature** | logger, SSH keys | disk storage | Forensic seal generation |
+| **Validation** | regex patterns | TUI, policy | Scope guardrails |
+
 ### Testing & Coverage Metrics
 
-- **Overall Coverage:** 49%
-- **High-Coverage Modules:**
+- **Overall Coverage:** 76.5% ✅ (14 packages tested)
   - `internal/signature` — 91.3% (cryptographic operations)
   - `internal/tui` — 88.7% (user interaction flows)
   - `internal/discovery` — 95.5% (environment detection)
-- **Test Count:** 49 unit tests across 9 packages
+- **Test Count:** 100+ tests across 14 packages
 - **Benchmarks:** Signature performance (hash/sign ops), policy generation time
 
 **Critical Paths Covered:**
-- Policy generation for various scope combinations
-- ANSI stripping across diverse terminal output
-- Graceful shutdown coordination
-- SHA256/SSH signature verification

@@ -6,29 +6,21 @@ Complete instructions for deploying N-Audit Sentinel on Kubernetes (K3s, K8s, or
 
 Before deployment, build and test the project:
 
+Use the Makefile for deterministic builds and tests or the Go helpers in `docs/DEPLOYMENT_HELPERS.md`.
+
+Example (Makefile):
+
 ```bash
-# Build binary
-make build
-
-# Run unit and integration tests
-make test
-
-# Run end-to-end tests (K3s environment)
-make test-e2e ENV=k3s
-
-# Format code
-make fmt
-
-# Lint code
-make lint
-
-# Create release artifacts (binary + source code tarballs)
-make release VERSION=v1.0.0-Beta
+make build && make test
 ```
 
-For more Makefile targets, run:
-```bash
-make help
+Quick Go automation example (see full helpers in `docs/DEPLOYMENT_HELPERS.md`):
+
+```go
+// runmake.go (illustrative)
+package main
+import ("os/exec")
+func main(){ exec.Command("make","build").Run(); exec.Command("make","test").Run() }
 ```
 
 ## Deployment Pipeline
@@ -81,23 +73,25 @@ flowchart TD
 
 **Build and load image into local cluster:**
 
+Use the Makefile release target or the image helpers in `docs/DEPLOYMENT_HELPERS.md`.
+
+Quick steps:
+
 ```bash
-# From repository root
+# Build release artifact
 make release VERSION=v1.0.0-Beta
 
-# Navigate to Dockerfile location
-cd beta-test-deployment
+# For K3s (containerd): load image into cluster
+docker save n-audit-sentinel:v1.0.0-Beta | sudo k3s ctr images import -
+```
 
-# Build image
-docker build -t n-audit-sentinel:v1.0.0-Beta .
+Example Go wrapper (illustrative):
 
-# Load into K3s containerd (K3s example)
-docker save n-audit-sentinel:v1.0.0-Beta | \
-  sudo k3s ctr images import -
-
-# Or for standard K8s with Docker
-kubectl load image n-audit-sentinel:v1.0.0-Beta \
-  --node=<node-name>  # if using image import
+```go
+// loadimage.go
+package main
+import ("os/exec")
+func main(){ exec.Command("sh","-c","docker save n-audit-sentinel:v1.0.0-Beta | sudo k3s ctr images import -").Run() }
 ```
 
 ### Option B: Registry-Based (Production)
@@ -146,34 +140,22 @@ Customization via variables (see `deploy/terraform/variables.tf`):
 
 ### Create hostPath directories
 
-```bash
-# Create storage directory with signing subdirectory
-sudo mkdir -p /mnt/n-audit-data/signing
+Refer to `docs/DEPLOYMENT_HELPERS.md` for a Go helper to prepare storage and keys.
 
-# Set permissions (directory accessible to pod)
-sudo chmod 755 /mnt/n-audit-data
-sudo chmod 755 /mnt/n-audit-data/signing
+Short Go usage:
+
+```go
+if err := PrepareStorageAndKeys("/mnt"); err != nil { panic(err) }
 ```
 
 ### Generate Ed25519 signing key
 
-```bash
-# Generate SSH key pair (no passphrase for automated signing)
-sudo ssh-keygen \
-  -t ed25519 \
-  -N "" \
-  -f /mnt/n-audit-data/signing/id_ed25519 \
-  -C "n-audit-sentinel@$(hostname)"
+Key generation is handled by `PrepareStorageAndKeys` in `docs/DEPLOYMENT_HELPERS.md`.
 
-# Secure key file
-sudo chmod 600 /mnt/n-audit-data/signing/id_ed25519
-sudo chmod 644 /mnt/n-audit-data/signing/id_ed25519.pub
+It shells out to `ssh-keygen` and sets secure permissions. Example call (local operator):
 
-# Verify
-sudo ls -la /mnt/n-audit-data/signing/
-# Expected:
-# -rw------- id_ed25519     (private key, 600)
-# -rw-r--r-- id_ed25519.pub (public key, 644)
+```go
+if err := PrepareStorageAndKeys("/mnt"); err != nil { log.Fatalf("setup failed: %v", err) }
 ```
 
 **Important:** Keep the private key secure. Store backups in a secure location.
@@ -186,49 +168,24 @@ N-Audit Sentinel requires a ServiceAccount with permissions to create, read, and
 
 **Option A: Use provided manifests (recommended)**
 
+
+Use provided manifests or the programmatic `ApplyRBAC` helper in `docs/DEPLOYMENT_HELPERS.md`.
+
+CLI example (apply manifest):
+
 ```bash
-# Apply all-in-one ServiceAccount + RBAC
 kubectl apply -f beta-test-deployment/serviceaccount.yaml
-
-# Verify
 kubectl get serviceaccount n-audit-sentinel
-kubectl get clusterrole n-audit-cilium-policy
-kubectl get clusterrolebinding n-audit-cilium-policy
 ```
 
-**Option B: Apply inline YAML**
+Go example (programmatic):
 
-```bash
-kubectl apply -f - <<'EOF'
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: n-audit-sentinel
-  namespace: default
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: n-audit-cilium-policy
-rules:
-- apiGroups: ["cilium.io"]
-  resources: ["ciliumnetworkpolicies"]
-  verbs: ["get", "list", "create", "delete", "update", "patch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: n-audit-cilium-policy
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: n-audit-cilium-policy
-subjects:
-- kind: ServiceAccount
-  name: n-audit-sentinel
-  namespace: default
-EOF
+```go
+// assume kubeClient is a configured client-go interface
+if err := ApplyRBAC(kubeClient); err != nil { log.Fatalf("rbac apply failed: %v", err) }
 ```
+
+**Option B: Apply inline YAML** (same manifest can be applied via `kubectl apply -f -` or programmatically via client-go; see `docs/DEPLOYMENT_HELPERS.md` for Go snippets).
 
 ### Verify permissions
 

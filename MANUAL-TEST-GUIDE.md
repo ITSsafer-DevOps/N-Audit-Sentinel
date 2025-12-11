@@ -15,24 +15,41 @@ The TUI (Text User Interface) interaction runs over a TTY (stdin/stdout), so pro
 ## Manual test - Full flow
 
 ### 1. Attach to the Pod
-```bash
-kubectl exec -it n-audit-sentinel -- bash
+```go
+// Attach to pod (local operator example)
+package main
+import (
+    "os"
+    "os/exec"
+)
+func main(){
+    cmd := exec.Command("kubectl","exec","-it","n-audit-sentinel","--","bash")
+    cmd.Stdin = os.Stdin
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    _ = cmd.Run()
+}
 ```
-
 **Expected result:**
 - You should see a Kali Linux shell prompt (`┌──(root㉿n-audit-sentinel)-[/var/lib/n-audit]`)
 - The `n-audit-sentinel` process may skip TUI prompts if stdin is not attached at startup
 
 ### 2. Verify Kali environment
-```bash
-whoami
-# Expected output: root
+Use the attached shell or programmatic checks. Example (programmatic command run via `kubectl exec`):
 
-cat /etc/os-release | head -5
-# Expected output: Kali GNU/Linux Rolling 2025.4
-
-uname -a
-# Expected output: Linux n-audit-sentinel ... (Kali kernel)
+```go
+// runchecks.go
+package main
+import (
+    "fmt"
+    "os/exec"
+)
+func run(cmd ...string) string { out,_ := exec.Command("kubectl", append([]string{"exec","n-audit-sentinel","--"}, cmd...)...).CombinedOutput(); return string(out) }
+func main(){
+    fmt.Println(run("whoami"))
+    fmt.Println(run("cat","/etc/os-release"))
+    fmt.Println(run("uname","-a"))
+}
 ```
 
 ### 3. Test Safety Loop
@@ -46,10 +63,14 @@ exit
 - The application logs: `[N-Audit] Shell exited with code X. Restarting...`
 
 ### 4. Verify session logs
-```bash
-cat /var/lib/n-audit/session.log
-```
+To inspect session logs programmatically or from hostPath, see `docs/DEPLOYMENT_HELPERS.md`.
 
+Quick programmatic example (kubectl exec):
+
+```go
+out,_ := exec.Command("kubectl","exec","n-audit-sentinel","--","cat","/var/lib/n-audit/session.log").CombinedOutput()
+fmt.Println(string(out))
+```
 **Expected result:**
 ```
 2025-11-30T13:10:19.303705939Z === Infrastructure Discovery ===
@@ -59,12 +80,14 @@ cat /var/lib/n-audit/session.log
 ```
 
 ### 5. Test graceful shutdown (from another terminal)
-```bash
-# Terminal 1: stay attached to the Pod
-kubectl exec -it n-audit-sentinel -- bash
 
-# Terminal 2: send SIGUSR1
-kubectl exec n-audit-sentinel -- /usr/local/bin/n-audit
+Programmatic send (exec):
+
+```go
+// send-sig.go
+package main
+import ("os/exec")
+func main(){ exec.Command("kubectl","exec","n-audit-sentinel","--","/usr/local/bin/n-audit").Run() }
 ```
 
 **Expected result in Terminal 1:**
@@ -117,11 +140,14 @@ For automated TUI testing you can:
 ## Additional steps for full testing
 
 ### Option 1: Interactive TTY testing
-```bash
-# Recreate Pod for manual interaction
-kubectl delete pod n-audit-sentinel --force --grace-period=0
-kubectl create -f deploy/k8s/pod.yaml
-kubectl exec -it n-audit-sentinel -- /usr/local/bin/n-audit-sentinel
+Use the deployment helpers or the Makefile; for automated workflows see `docs/DEPLOYMENT_HELPERS.md` and `TESTING_AND_VERIFICATION.md` for Go-based e2e examples.
+
+Example programmatic recreate + attach (illustrative):
+
+```go
+exec.Command("kubectl","delete","pod","n-audit-sentinel","--force","--grace-period=0").Run()
+exec.Command("kubectl","create","-f","deploy/k8s/pod.yaml").Run()
+exec.Command("kubectl","exec","-it","n-audit-sentinel","--","/usr/local/bin/n-audit-sentinel").Run()
 ```
 **Note:** stdin may not be attached at startup; the TUI may skip prompts.
 
@@ -141,6 +167,14 @@ N_AUDIT_PENTESTER_NAME="John Doe"
 N_AUDIT_CLIENT_NAME="Acme Corp"
 N_AUDIT_SCOPE_IPS="192.168.1.0/24,10.0.0.0/8"
 N_AUDIT_SCOPE_DOMAINS="example.com,test.local"
+```
+
+To run non-interactive programmatically in Go:
+
+```go
+cmd := exec.Command("kubectl","exec","n-audit-sentinel","--","/usr/local/bin/n-audit-sentinel")
+cmd.Env = append(os.Environ(), "N_AUDIT_PENTESTER_NAME=John Doe", "N_AUDIT_CLIENT_NAME=Acme Corp")
+cmd.Run()
 ```
 
 ---
