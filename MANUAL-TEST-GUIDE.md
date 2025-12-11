@@ -1,38 +1,38 @@
 # N-Audit Sentinel - Manual Testing Guide
 
-## Prečo manuálne testovanie?
-TUI (Text User Interface) interakcia prebieha cez TTY (stdin/stdout), preto sa **nezobrazuje v kubectl logs**. Logy obsahujú len banner a systémové správy.
+## Why manual testing?
+The TUI (Text User Interface) interaction runs over a TTY (stdin/stdout), so prompts are **not visible in `kubectl logs`**. The logs contain only the banner and system messages.
 
-## Overené funkcionality (automaticky):
-✅ **Banner** - ASCII art s magenta "N-Audit Sentinel"  
-✅ **Infrastructure Discovery** - K8s API (10.43.0.1:443) a DNS (10.43.0.10)  
+## Verified functionality (automated):
+✅ **Banner** - ASCII art with magenta "N-Audit Sentinel"  
+✅ **Infrastructure Discovery** - K8s API (10.43.0.1:443) and DNS (10.43.0.10)  
 ✅ **Kali Linux environment** - `/etc/os-release` = Kali GNU/Linux Rolling 2025.4  
-✅ **Safety Loop** - shell sa reštartuje po `exit`  
-✅ **Graceful Shutdown** - `n-audit` CLI posiela SIGUSR1  
+✅ **Safety Loop** - the shell restarts after `exit`  
+✅ **Graceful Shutdown** - `n-audit` CLI sends SIGUSR1  
 
 ---
 
-## Manuálny test - Kompletný flow
+## Manual test - Full flow
 
-### 1. Pripojenie do podu
+### 1. Attach to the Pod
 ```bash
 kubectl exec -it n-audit-sentinel -- bash
 ```
 
-**Očakávaný výsledok:**
-- Otvorí sa Kali Linux shell (`┌──(root㉿n-audit-sentinel)-[/var/lib/n-audit]`)
-- Proces `n-audit-sentinel` už preskočil TUI (pretože stdin nie je pripojený pri štarte)
+**Expected result:**
+- You should see a Kali Linux shell prompt (`┌──(root㉿n-audit-sentinel)-[/var/lib/n-audit]`)
+- The `n-audit-sentinel` process may skip TUI prompts if stdin is not attached at startup
 
-### 2. Overenie Kali environmentu
+### 2. Verify Kali environment
 ```bash
 whoami
-# Výstup: root
+# Expected output: root
 
 cat /etc/os-release | head -5
-# Výstup: Kali GNU/Linux Rolling 2025.4
+# Expected output: Kali GNU/Linux Rolling 2025.4
 
 uname -a
-# Výstup: Linux n-audit-sentinel ... (Kali kernel)
+# Expected output: Linux n-audit-sentinel ... (Kali kernel)
 ```
 
 ### 3. Test Safety Loop
@@ -40,17 +40,17 @@ uname -a
 exit
 ```
 
-**Očakávaný výsledok:**
-- Shell sa **reštartuje** (neukončí sa pod)
-- Znova sa zobrazí prompt: `┌──(root㉿n-audit-sentinel)-[/var/lib/n-audit]`
-- Aplikácia loguje: `[N-Audit] Shell exited with code X. Restarting...`
+**Expected result:**
+- The shell restarts (the Pod does not terminate)
+- The prompt should reappear: `┌──(root㉿n-audit-sentinel)-[/var/lib/n-audit]`
+- The application logs: `[N-Audit] Shell exited with code X. Restarting...`
 
-### 4. Overenie session logov
+### 4. Verify session logs
 ```bash
 cat /var/lib/n-audit/session.log
 ```
 
-**Očakávaný výsledok:**
+**Expected result:**
 ```
 2025-11-30T13:10:19.303705939Z === Infrastructure Discovery ===
 2025-11-30T13:10:19.303736389Z K8s API Server: 10.43.0.1:443
@@ -58,75 +58,75 @@ cat /var/lib/n-audit/session.log
 2025-11-30T13:10:19.303754638Z ================================
 ```
 
-### 5. Test graceful shutdown (z iného terminálu)
+### 5. Test graceful shutdown (from another terminal)
 ```bash
-# Terminál 1: zostane v pode
+# Terminal 1: stay attached to the Pod
 kubectl exec -it n-audit-sentinel -- bash
 
-# Terminál 2: pošle SIGUSR1
+# Terminal 2: send SIGUSR1
 kubectl exec n-audit-sentinel -- /usr/local/bin/n-audit
 ```
 
-**Očakávaný výsledek v Termináli 1:**
-- Shell sa ukončí (pod sa reštartuje alebo stopne, závisí od `restartPolicy`)
+**Expected result in Terminal 1:**
+- The shell will terminate (the Pod may restart or stop depending on `restartPolicy`)
 
-**Očakávaný výsledek v logoch:**
+**Expected logs:**
 ```bash
 kubectl logs n-audit-sentinel --tail=10
-# Obsahuje: [N-Audit] Received signal user defined signal 1. Initiating shutdown...
+# Contains: [N-Audit] Received signal user defined signal 1. Initiating shutdown...
 ```
 
 ---
 
-## Prečo TUI prompty nie sú v logoch?
+## Why TUI prompts do not appear in logs
 
-TUI používa **TTY (pseudoterminal)** pre interaktívnu komunikáciu:
-- `stdin: true` a `tty: true` v Pod spec umožňujú pripojiť TTY
-- Prompty ako "Pentester Name:", "Client Name:" sa vypisujú **len do TTY**
-- `kubectl logs` zachytáva **len stdout/stderr** z procesu, nie z TTY
+The TUI uses a **TTY (pseudoterminal)** for interactive I/O:
+- `stdin: true` and `tty: true` in the Pod spec allow attaching a TTY
+- Prompts such as "Pentester Name:" and "Client Name:" are written **only to the TTY**
+- `kubectl logs` captures **only stdout/stderr** from the process, not TTY output
 
-### Alternatíva: Script-based testing
-Pre automatizované testovanie TUI by bolo potrebné:
-1. Použiť `expect` alebo podobný nástroj
-2. Simulovať TTY interakciu cez `script` príkaz
-3. Alebo implementovať non-interactive režim (env variable `N_AUDIT_NONINTERACTIVE=true`)
-
----
-
-## Zhrnutie úspešného testovania
-
-### Overené komponenty:
-1. ✅ **Docker image build** - Go 1.24, multi-stage build úspešný
-2. ✅ **K3s deployment** - pod Running, Cilium CNI aktívna
-3. ✅ **Infrastructure discovery** - K8s API a DNS detekované
-4. ✅ **ASCII banner** - zobrazený v logoch s farbami
-5. ✅ **Kali Linux environment** - shell funguje, príkazy dostupné
-6. ✅ **Safety loop** - shell sa reštartuje po exit
-7. ✅ **Graceful shutdown** - SIGUSR1 správne zachytený
-
-### Neoverené (vyžaduje manuálne testovanie s TTY):
-- [ ] TUI prompt "Pentester Name:" - zobrazenie a čítanie vstupu
-- [ ] TUI prompt "Client Name:" - zobrazenie a čítanie vstupu
-- [ ] TUI prompt "Scope (IP/CIDR)" - validácia a double-enter ukončenie
-- [ ] TUI prompt "Scope (Domains)" - validácia a double-enter ukončenie
-- [ ] Network Policy creation - vytvorenie Cilium policy po zadaní scope
-- [ ] SSH signature - podpis session logu pri shutdowne (vyžaduje SSH kľúč)
+### Alternative: Script-based testing
+For automated TUI testing you can:
+1. Use `expect` or a similar tool
+2. Simulate TTY interaction using the `script` command
+3. Or implement a non-interactive mode (environment variable `N_AUDIT_NONINTERACTIVE=true`)
 
 ---
 
-## Ďalšie kroky pre plné testovanie
+## Summary of successful tests
 
-### Možnosť 1: Interaktívne TTY testovanie
+### Verified components:
+1. ✅ **Docker image build** - Go 1.24 multi-stage build succeeded
+2. ✅ **K3s deployment** - Pod is Running and Cilium CNI active
+3. ✅ **Infrastructure discovery** - K8s API and DNS detected
+4. ✅ **ASCII banner** - displayed in logs with colors
+5. ✅ **Kali Linux environment** - shell works and commands are available
+6. ✅ **Safety loop** - shell restarts after exit
+7. ✅ **Graceful shutdown** - SIGUSR1 correctly handled
+
+### Unverified (requires interactive TTY testing):
+- [ ] TUI prompt "Pentester Name:" - display and input handling
+- [ ] TUI prompt "Client Name:" - display and input handling
+- [ ] TUI prompt "Scope (IP/CIDR)" - validation and double-enter finish
+- [ ] TUI prompt "Scope (Domains)" - validation and double-enter finish
+- [ ] Network Policy creation - creation of Cilium policy after scope input
+- [ ] SSH signature - sign the session log at shutdown (requires SSH key)
+
+---
+
+## Additional steps for full testing
+
+### Option 1: Interactive TTY testing
 ```bash
-# Vytvoriť nový pod s manual interakciou
+# Recreate Pod for manual interaction
 kubectl delete pod n-audit-sentinel --force --grace-period=0
 kubectl create -f deploy/k8s/pod.yaml
 kubectl exec -it n-audit-sentinel -- /usr/local/bin/n-audit-sentinel
 ```
-**Problém:** stdin nie je pripojený pri štarte, TUI okamžite preskočí prompty.
+**Note:** stdin may not be attached at startup; the TUI may skip prompts.
 
-### Možnosť 2: Pridať debug režim
-Upraviť `cmd/n-audit-sentinel/main.go`:
+### Option 2: Add debug mode
+Edit `cmd/n-audit-sentinel/main.go`:
 ```go
 if os.Getenv("N_AUDIT_DEBUG") == "true" {
     log.Printf("[DEBUG] Waiting 30s for manual attachment...")
@@ -134,8 +134,8 @@ if os.Getenv("N_AUDIT_DEBUG") == "true" {
 }
 ```
 
-### Možnosť 3: Non-interactive testing mode
-Implementovať env variables:
+### Option 3: Non-interactive testing mode
+Set environment variables:
 ```bash
 N_AUDIT_PENTESTER_NAME="John Doe"
 N_AUDIT_CLIENT_NAME="Acme Corp"
@@ -145,8 +145,8 @@ N_AUDIT_SCOPE_DOMAINS="example.com,test.local"
 
 ---
 
-## Kontakt
-Pre otázky alebo bug reporty:
-- Developer: Kristián Kašník
-- Company: 
-- Website: https://www..com
+## Contact
+For questions or bug reports:
+- Developer: Kristian Kasnik
+- Company:
+- Website: https://www.example.com

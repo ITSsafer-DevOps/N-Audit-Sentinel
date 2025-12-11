@@ -1,8 +1,8 @@
 // N-Audit Sentinel - TUI
-// Developer: Kristián Kašník
+// Developer: Kristian Kasnik
 // Company: ITSsafer-DevOps
 // License: MIT License
-// Copyright (c) 2025 Kristián Kašník, ITSsafer-DevOps
+// Copyright (c) 2025 Kristian Kasnik, ITSsafer-DevOps
 // Provides banner display and interactive input collection with double-enter scope logic.
 package tui
 
@@ -26,7 +26,7 @@ var asciiBanner = `███╗   ██╗       █████╗ ██╗  
 // It does not perform any terminal control and is safe for non-TTY outputs.
 func ShowBanner(w io.Writer) {
 	fmt.Fprintln(w, asciiBanner)
-	fmt.Fprintln(w, "Developer: Kristián Kašník")
+	fmt.Fprintln(w, "Developer: Kristian Kasnik")
 	fmt.Fprintln(w, "Company: ITSsafer-DevOps")
 	fmt.Fprintln(w, "License: MIT License (Open Source)")
 	fmt.Fprintln(w)

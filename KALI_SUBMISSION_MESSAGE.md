@@ -6,7 +6,7 @@
 **Version:** v1.0.0-Beta
 **Repository:** https://github.com/ITSsafer-DevOps/N-Audit-Sentinel
 **License:** MIT
-**Author:** Kristián Kašník / ITSsafer-DevOps
+**Author:** Kristian Kasnik / ITSsafer-DevOps
 
 ## Description
 

@@ -1,8 +1,8 @@
 // N-Audit Sentinel - Kubernetes Discovery
-// Developer: Kristián Kašník
+// Developer: Kristian Kasnik
 // Company: ITSsafer-DevOps
 // License: MIT License
-// Copyright (c) 2025 Kristián Kašník, ITSsafer-DevOps
+// Copyright (c) 2025 Kristian Kasnik, ITSsafer-DevOps
 // Automatic discovery of Kubernetes API server and DNS servers.
 package discovery
 

@@ -1,5 +1,5 @@
 // N-Audit Sentinel Release Tool
-// Developer: Kristián Kašník
+// Developer: Kristian Kasnik
 // Company: ITSsafer-DevOps
 // License: MIT License
 // Automates building and packaging binaries into a versioned tarball with SHA256 signature.

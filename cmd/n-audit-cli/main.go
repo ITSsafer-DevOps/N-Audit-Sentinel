@@ -1,8 +1,8 @@
 // N-Audit Sentinel - Exit CLI
-// Developer: Kristián Kašník
+// Developer: Kristian Kasnik
 // Company: ITSsafer-DevOps
 // License: MIT License
-// Copyright (c) 2025 Kristián Kašník, ITSsafer-DevOps
+// Copyright (c) 2025 Kristian Kasnik, ITSsafer-DevOps
 // Sends SIGUSR1 to PID 1 to trigger forensic session seal and exit.
 package main
 

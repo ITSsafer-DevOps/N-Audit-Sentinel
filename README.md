@@ -82,9 +82,9 @@ This repository is licensed under the MIT License. See the `LICENSE` file for de
 
 ## Contact
 
-Developer: Kristián Kašník
+Developer: Kristian Kasnik
 Email: itssafer@itssafer.org
-LinkedIn: linkedin.com/in/kristián-kašník-03056a377
+LinkedIn: linkedin.com/in/kristian-kasnik-03056a377
 # N-Audit Sentinel
 
 ```
@@ -96,9 +96,9 @@ LinkedIn: linkedin.com/in/kristián-kašník-03056a377
 ╚═╝  ╚═══╝      ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝   ╚═╝       ╚══════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝
 ```
 
-**Developer:** Kristián Kašník  
+**Developer:** Kristian Kasnik  
 **Contact:** itssafer@itssafer.org  
-**LinkedIn:** linkedin.com/in/kristián-kašník-03056a377  
+**LinkedIn:** linkedin.com/in/kristian-kasnik-03056a377  
 **License:** MIT License (Open Source)
 
 <!-- Badges -->
@@ -364,7 +364,7 @@ Variables support customization of image, storage class, and namespace. See `dep
 
 ## License
 
-MIT License © Kristián Kašník - ITSsafer-DevOps and contributors.  
+MIT License © Kristian Kasnik - ITSsafer-DevOps and contributors.  
 See [LICENSE](LICENSE) for full text.
 
 ---

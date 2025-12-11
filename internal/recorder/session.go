@@ -1,8 +1,8 @@
 // N-Audit Sentinel - Session Recorder
-// Developer: Kristián Kašník
+// Developer: Kristian Kasnik
 // Company: ITSsafer-DevOps
 // License: MIT License
-// Copyright (c) 2025 Kristián Kašník, ITSsafer-DevOps
+// Copyright (c) 2025 Kristian Kasnik, ITSsafer-DevOps
 // Manages PTY session with auto-respawn safety loop.
 package recorder
 

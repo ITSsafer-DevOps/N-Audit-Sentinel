@@ -1,7 +1,7 @@
 Source: n-audit-sentinel
 Section: utils
 Priority: optional
-Maintainer: Kristián Kašník <itssafer@itssafer.org>
+Maintainer: Kristian Kasnik <itssafer@itssafer.org>
 Build-Depends: debhelper (>= 11), golang-any
 Standards-Version: 4.5.0
 Homepage: https://github.com/ITSsafer-DevOps/N-Audit-Sentinel
@@ -15,7 +15,7 @@ Description: N-Audit Sentinel - Kubernetes forensic auditing tool
 Source: n-audit-sentinel
 Section: utils
 Priority: optional
-Maintainer: Kristián Kašník <itssafer@itssafer.org>
+Maintainer: Kristian Kasnik <itssafer@itssafer.org>
 Build-Depends: debhelper (>= 11), golang-any
 Standards-Version: 4.5.0
 Homepage: https://github.com/ITSsafer-DevOps/N-Audit-Sentinel

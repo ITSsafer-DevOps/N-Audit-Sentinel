@@ -1,28 +1,28 @@
-MANUAL SUBMISSION INSTRUCTIONS (SK)
+MANUAL SUBMISSION INSTRUCTIONS (EN)
 
-1) Otvorte stránku bugs.kali.org a prihláste sa do svojho účtu.
+1) Open https://bugs.kali.org and sign in to your account.
 
-2) Vytvorte nový tiket (New Bug Report / New Issue) s nasledujúcimi poľami:
+2) Create a new ticket (New Bug Report / New Issue) and fill these fields:
    - TITLE: [New Tool Request] N-Audit Sentinel v1.0.0-Beta – Enterprise Kubernetes Forensic Auditing Tool
-   - BODY: Skopírujte celý obsah súboru `contrib/kali/KALI_SUBMISSION_ISSUE.md` alebo použite text priložený v tomto repozitári.
+   - BODY: Copy the full contents of `contrib/kali/KALI_SUBMISSION_ISSUE.md` or use the text provided in this repository.
 
-3) Priložte odkazy a checksumy:
+3) Attach links and checksums:
    - Release URL: https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/releases/tag/v1.0.0-Beta
    - Binary SHA256: e48fc6794f5a46bae0a5340169dfd442cd60c2d14d03f3b1f5afb9de8ccb5d34
    - Source SHA256: f6444531bbff8411d07e506a3988966d8f5828546f9bb3c81e162d3554ebdeb9
    - Gold master SHA256: dcd206944e8caa46c1c25510f72fbb487f7ccfb9120684b5c3d8cad5803f1781
 
-4) Licencia / Author / Contact:
+4) License / Author / Contact:
    - License: MIT
-   - Author: Kristián Kašník (ITSsafer-DevOps)
+   - Author: Kristian Kasnik (ITSsafer-DevOps)
    - Contact: itssafer@itssafer.org
 
-5) Poznámky pre balíčkovanie (optional):
-   - V repozitári nájdete Debian scaffold v `contrib/debian/`.
-   - Prípadné závislosti a build-inštrukcie sú v `DEPLOYMENT.md` a `Makefile`.
+5) Packaging notes (optional):
+   - The Debian packaging scaffold is available under `contrib/debian/`.
+   - Dependencies and build instructions are in `DEPLOYMENT.md` and `Makefile`.
 
-6) Po vytvorení ticketu skopírujte URL ticketu a pridajte ju sem do repozitára alebo pošlite kontaktnej osobe v Kali.
+6) After creating the ticket, copy the ticket URL and add it to this repository or send it to the Kali contact.
 
-7) Ak chcete, môžem pripraviť priamy text pre pole "comment" pri bug reporte, ktorý stačí vložiť (napr. poznámky o testovaní a environment-e).
+7) Optionally, I can prepare text for the ticket "comment" field (testing notes and environment details).
 
-Hotovo.
+Done.

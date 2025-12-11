@@ -10,7 +10,7 @@ BODY:
 **Repository:** https://github.com/ITSsafer-DevOps/N-Audit-Sentinel  
 **Download:** https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/releases/tag/v1.0.0-Beta  
 **License:** MIT  
-**Author:** Kristián Kašník (ITSsafer-DevOps)  
+**Author:** Kristian Kasnik (ITSsafer-DevOps)  
 **Contact:** itssafer@itssafer.org
 
 ## Description
