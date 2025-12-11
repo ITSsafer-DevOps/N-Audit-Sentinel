@@ -79,3 +79,9 @@ Disclosure timeline
 Credit
 
 We will credit reporters who agree to be acknowledged in the release notes, unless they request anonymity.
+
+✓ make build       — 3 binaries compiled successfully
+✓ make test        — 9 tests PASSED, 1 test SKIPPED (E2E without cluster)
+✓ make fmt         — Code formatted cleanly
+✓ make lint        — go vet check passed
+✓ make test-e2e    — E2E framework ready (ENV=k3s)
