@@ -318,3 +318,170 @@ SIGNATURE=$(grep "SSH Signature" /mnt/n-audit-data/session.log | cut -d: -f2)
 - **[README.md](README.md)** — Architecture and feature overview
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** — Complete deployment instructions
 - **[SECURITY.md](SECURITY.md)** — Security model and threat analysis
+
+---
+
+## Advanced Verification & Analysis
+
+### eBPF Policy Validation
+
+**Verify Cilium eBPF programs are loaded:**
+
+```bash
+# On the node running the pod, check loaded BPF programs
+sudo bpftool prog list | grep cilium
+
+# Show detailed BPF program info
+sudo bpftool prog show id <PROG_ID> verbose
+
+# Trace policy enforcement in real-time
+sudo bpftool prog tracelog
+```
+
+**Expected output (for active policy):**
+```
+xdp_program: cilium_xdp_exit (type: XDP)
+tc_program: cilium_tc_ingress (type: TC)
+tc_program: cilium_tc_egress (type: TC)
+```
+
+### Network Stack Inspection
+
+**Verify policy enforcement at kernel level:**
+
+```bash
+# Monitor netfilter connections (if using legacy iptables)
+sudo conntrack -L
+
+# Check Cilium agent status
+kubectl -n kube-system exec -it cilium-xxx -- cilium status
+
+# View installed policies
+kubectl -n kube-system exec -it cilium-xxx -- cilium policy get
+```
+
+### Cryptographic Seal Validation (Advanced)
+
+**Manual Ed25519 signature verification:**
+
+```bash
+# Extract public key
+PUB_KEY=$(cat /mnt/n-audit-data/signing/id_ed25519.pub)
+
+# Extract signature from seal
+SIGNATURE=$(grep "SSH Signature" /mnt/n-audit-data/session.log | awk -F': ' '{print $2}')
+
+# Decode base64 signature
+echo $SIGNATURE | base64 -d > /tmp/sig.bin
+
+# Extract content before seal
+awk '/^=== FORENSIC SEAL ===/{exit}' /mnt/n-audit-data/session.log > /tmp/content.txt
+
+# Compute hash
+SHA=$(sha256sum /tmp/content.txt | cut -d' ' -f1)
+echo "Computed SHA256: $SHA"
+
+# Compare with seal
+SEAL_SHA=$(grep "SHA256 Hash" /mnt/n-audit-data/session.log | awk -F': ' '{print $2}')
+echo "Seal SHA256:     $SEAL_SHA"
+[ "$SHA" = "$SEAL_SHA" ] && echo "✓ Hash verified" || echo "✗ Hash mismatch"
+```
+
+### PTY Emulation Verification
+
+**Verify bash safety loop is functioning:**
+
+```bash
+# Inside active session
+$ exit    # or Ctrl+D
+# Expected: Bash respawns (prompt returns)
+
+$ exit
+# Expected: Prompt still present
+
+# To terminate, use:
+$ n-audit exit    # From another terminal: kubectl exec ... -- /usr/local/bin/n-audit
+```
+
+### Performance Analysis
+
+**Measure policy application latency:**
+
+```bash
+# Start time before scope entry
+kubectl logs n-audit-sentinel | grep "Apply CNP"
+
+# Policy should apply within <5 seconds
+# If > 10 seconds: Check Cilium agent logs, API server latency
+```
+
+**Monitor logging throughput:**
+
+```bash
+# Measure log file growth
+while true; do
+  SIZE=$(stat -f%z /mnt/n-audit-data/session.log 2>/dev/null || stat -c%s /mnt/n-audit-data/session.log)
+  echo "$(date): $SIZE bytes"
+  sleep 1
+done
+
+# Expected: 1-50 KB/sec under normal activity
+# If > 100 KB/sec: Commands generating excessive output
+```
+
+### Cilium Policy Inspection
+
+**Deep-dive into applied policies:**
+
+```bash
+# View all CiliumNetworkPolicies
+kubectl get cnp -o yaml
+
+# View the specific policy for our pod
+kubectl get cnp n-audit-sentinel-policy -o yaml
+
+# Check policy statistics
+kubectl exec -it cilium-xxx -n kube-system -- \
+  cilium policy get | grep n-audit-sentinel
+
+# Trace specific policy rules in action
+kubectl logs -n kube-system cilium-xxx | grep n-audit-sentinel
+```
+
+### Forensic Log Analysis
+
+**Extract session statistics:**
+
+```bash
+# Command count
+awk '/^\[SESSION\]/{next} /^[0-9]{4}-/{count++} END {print "Total lines:", count}' /mnt/n-audit-data/session.log
+
+# Time span
+HEAD_TIME=$(head -1 /mnt/n-audit-data/session.log | cut -d' ' -f1-2)
+TAIL_TIME=$(awk '/^=== FORENSIC SEAL ===/{exit} 1' /mnt/n-audit-data/session.log | tail -1 | cut -d' ' -f1-2)
+echo "Session: $HEAD_TIME → $TAIL_TIME"
+
+# Search for keywords (audit-related)
+grep -i "whoami\|id\|sudo\|exec" /mnt/n-audit-data/session.log
+
+# Detect anomalies (no ANSI codes)
+grep -c $'\x1b' /mnt/n-audit-data/session.log || echo "✓ No ANSI codes found (clean)"
+```
+
+### Troubleshooting Advanced Issues
+
+**Policy enforcement not activating:**
+- Check Cilium agent is running: `kubectl -n kube-system get pods | grep cilium`
+- Verify pod has `app: n-audit-sentinel` label: `kubectl get pod -L app`
+- Check policy syntax: `kubectl get cnp n-audit-sentinel-policy -o yaml`
+- Review Cilium agent logs: `kubectl logs -n kube-system -l k8s-app=cilium`
+
+**Seal computation failures:**
+- Verify signing key exists and is readable: `ls -la /mnt/n-audit-data/signing/id_ed25519`
+- Check key is valid Ed25519: `file /mnt/n-audit-data/signing/id_ed25519`
+- Review pod logs for signing errors: `kubectl logs n-audit-sentinel | grep -i signature`
+
+**Log persistence issues:**
+- Verify hostPath on node is writable: `sudo touch /mnt/n-audit-data/test.txt`
+- Check pod volume mount: `kubectl describe pod n-audit-sentinel | grep -A5 "Mounts:"`
+- Review pod filesystem: `kubectl exec -it n-audit-sentinel -- ls -la /var/lib/n-audit/`

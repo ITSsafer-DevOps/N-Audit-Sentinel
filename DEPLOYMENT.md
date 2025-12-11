@@ -373,3 +373,122 @@ sudo ls -la /mnt/n-audit-data/signing/
 - **[README.md](README.md)** — Architecture and feature overview
 - **[VERIFICATION_GUIDE.md](VERIFICATION_GUIDE.md)** — Testing and validation procedures
 - **[SECURITY.md](SECURITY.md)** — Security model and operational guidelines
+
+---
+
+## Advanced Deployment Architecture
+
+### Container Image Build Strategy
+
+The build process uses multi-stage compilation to minimize attack surface:
+
+1. **Builder Stage (Compile):**
+   - Base: `golang:1.25.3-alpine` (minimal attack surface)
+   - Compile with flags: `CGO_ENABLED=0 GOOS=linux GOARCH=amd64`
+   - Produces static binary (no libc dependencies)
+   - ~71 MB uncompressed
+
+2. **Runtime Stage (Kali Linux):**
+   - Base: `kalilinux/kali:latest`
+   - Copy compiled binary from builder
+   - Includes penetration testing tools and utilities
+   - Security focus: Immutable application binary, mutable audit logs
+
+**Build command (deterministic):**
+```bash
+docker build \
+  --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+  --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+  -t n-audit-sentinel:v1.0.0-Beta .
+```
+
+### Cilium Policy Application Workflow
+
+**Step-by-step policy enforcement:**
+
+1. **Policy Generation** (`internal/policy`):
+   ```go
+   cnp := generateCiliumNetworkPolicy(scope)
+   // Produces CiliumNetworkPolicy CRD YAML
+   ```
+
+2. **K8s API Submission**:
+   - Marshals CRD to JSON
+   - POSTs to Kubernetes API via bearer token
+   - Endpoint: `/apis/cilium.io/v2/ciliumnetworkpolicies`
+   - Namespace: `default` (configurable)
+
+3. **eBPF Program Installation**:
+   - Cilium agent receives CRD update
+   - Compiles policy to eBPF bytecode
+   - Loads into kernel via BPF system call
+   - Installs on veth0 (container network interface)
+
+4. **Packet Flow Interception**:
+   - **Ingress**: Cilium XDP hook (pre-network-stack)
+   - **Egress**: Cilium TC classifier (post-network-stack)
+   - **L7 Inspection**: Cilium proxy intercepts DNS/HTTP traffic
+
+5. **Policy Cleanup** (on SIGUSR1):
+   - DELETEs CiliumNetworkPolicy resource
+   - Cilium unloads eBPF programs
+   - Kernel removes packet filtering hooks
+   - Network returns to unrestricted state
+
+### ServiceAccount & RBAC Integration
+
+**Token-Based Authentication:**
+- ServiceAccount token mounted at `/var/run/secrets/kubernetes.io/serviceaccount/token`
+- Token includes: User identity (`system:serviceaccount:default:n-audit-sentinel`), signature, expiration
+- Kubernetes validates token against service account's public key
+
+**RBAC Policy Enforcement:**
+```yaml
+apiGroups: ["cilium.io"]
+resources: ["ciliumnetworkpolicies"]
+verbs: ["get", "list", "create", "delete", "update", "patch"]
+```
+Kubernetes API server checks:
+1. Authenticated user identity
+2. User's subject (ServiceAccount) bindings
+3. ClusterRole rules matching requested resource/verb
+4. Allows/denies API request
+
+### Persistent Volume & hostPath Security
+
+**hostPath Mount:**
+- Pod volume references `/mnt/n-audit-data` on host node
+- Container sees same path at `/var/lib/n-audit`
+- Bidirectional: Container writes → Host file system
+
+**File Permissions & Isolation:**
+- Directory: `755` (`rwxr-xr-x`) — readable by audit review, writable by pod
+- Log file: `644` (`rw-r--r--`) — readable for post-session analysis
+- Signing directory: `700` (`rwx------`) — pod exclusive
+- Private key: `600` (`rw-------`) — strong access control
+
+**Persistence Guarantee:**
+- Logs survive pod deletion (remain on host)
+- Logs survive node restart (if hostPath on persistent storage)
+- Consider using `PersistentVolume` + `StorageClass` for production
+
+### Image Import/Load Strategies
+
+**Local K3s (containerd backend):**
+```bash
+docker save image:tag | sudo k3s ctr images import -
+# Direct binary format into K3s container runtime
+```
+
+**Standard K8s (Docker daemon):**
+```bash
+docker build -t image:tag .
+# Images automatically available to kubelet (shares Docker daemon)
+```
+
+**Remote Registry (Production):**
+```bash
+docker push registry.example.com/image:tag
+# Node pulls via `imagePullPolicy: IfNotPresent` (default)
+# Requires ImagePullSecret if private registry
+```

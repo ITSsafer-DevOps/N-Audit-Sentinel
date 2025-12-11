@@ -78,43 +78,46 @@ Both utilities are tested, minimal, and designed for local development and CI pi
 ### Kubernetes Integration
 
 ```mermaid
-flowchart LR
-  subgraph K8sCluster [\"Kubernetes Cluster\"]
-    direction TB
-    Pod([\"N-Audit Sentinel Pod<br/>(PID 1 Runtime)\"])
-    Vol[(\"hostPath Volume<br/>/var/lib/n-audit\")]
-    API[(\"Kubernetes API<br/>Service Discovery\")]
-    DNS[(\"CoreDNS<br/>Domain Resolution\")]
-    CNP[[\"Cilium Network Policy<br/>Scope Enforcement\"]]
+graph LR
+    subgraph cluster["Kubernetes Cluster"]
+        direction TB
+        Pod["🔷 N-Audit Sentinel<br/>PID 1 Runtime<br/>Kali Linux"]
+        Vol[("hostPath Volume<br/>/var/lib/n-audit")]
+        API["Kubernetes API<br/>Service Discovery<br/>10.43.0.1:443"]
+        DNS["CoreDNS<br/>Domain Resolution<br/>10.43.0.10"]
+        CNP["Cilium Network Policy<br/>Scope Enforcement<br/>L3/L7 Rules"]
+        
+        Pod -->|auto-discover| API
+        Pod -->|auto-discover| DNS
+        Pod -->|create/delete| CNP
+        Pod <-->|mount| Vol
+    end
     
-    Pod -->|auto-discover| API
-    Pod -->|auto-discover| DNS
-    Pod -->|create/delete| CNP
-    Pod <-->|mount| Vol
-  end
-
-  User[\"Pentester/Auditor\"] -->|kubectl attach TTY| Pod
-  
-  style Pod fill:#4A90E2,color:#fff,stroke:#2E5C8A,stroke-width:2px
-  style Vol fill:#50E3C2,color:#000,stroke:#2E8B74,stroke-width:2px
-  style CNP fill:#F5A623,color:#000,stroke:#B8770B,stroke-width:2px
+    User["🎯 Pentester/Auditor<br/>Security Researcher"] -->|kubectl attach -it<br/>TTY| Pod
+    
+    style Pod fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff
+    style Vol fill:#50E3C2,stroke:#2E8B74,stroke-width:2px,color:#000
+    style API fill:#E8F4F8,stroke:#4A90E2,stroke-width:2px,color:#000
+    style DNS fill:#E8F4F8,stroke:#4A90E2,stroke-width:2px,color:#000
+    style CNP fill:#F5A623,stroke:#B8770B,stroke-width:2px,color:#000
+    style User fill:#7ED321,stroke:#5FA818,stroke-width:2px,color:#000
 ```
 
 ### Core Modules
 
-| Module | Location | Purpose |
-|--------|----------|---------|
-| **PID 1 Runtime** | `cmd/n-audit-sentinel` | Process lifecycle, signal handling, session teardown |
-| **Exit Helper** | `cmd/n-audit` | Triggers graceful shutdown via SIGUSR1 |
-| **Logger** | `internal/logger` | ANSI stripping, per-line timestamp injection (`YYYY-MM-DD HH:MM:SS UTC`) |
-| **Policy Engine** | `internal/policy` | Cilium policy generation, validation, and enforcement |
-| **PTY Recorder** | `internal/recorder` | Terminal session capture with safety loop on exit |
-| **TUI** | `internal/tui` | Interactive banner and scope prompts (double-Enter to finalize) |
-| **Validation** | `internal/validation` | IP/CIDR/domain normalization and guardrails |
-| **Signature** | `internal/signature` | SHA256 hashing and SSH cryptographic sealing |
-| **Discovery** | `internal/discovery` | Kubernetes API and DNS auto-discovery |
-| **Backup Manager** | `cmd/backup-manager` | Gold Master archival with checksums |
-| **Release Manager** | `cmd/release-manager` | Deterministic artifact packaging |
+| Module | Location | Purpose | Implementation Details |
+|--------|----------|---------|--------------------------|
+| **PID 1 Runtime** | `cmd/n-audit-sentinel` | Process lifecycle, signal handling (SIGUSR1), session teardown with graceful shutdown guarantees | Handles init process responsibilities, reaps zombies, manages bash respawning via safety loop, coordinates teardown with logger and policy cleanup |
+| **Exit Helper** | `cmd/n-audit` | Graceful SIGUSR1 sender for triggering controlled session termination | Lightweight utility that signals PID 1 to initiate forensic seal and policy cleanup |
+| **Logger** | `internal/logger` | ANSI stripping via regex, per-line timestamp injection (`YYYY-MM-DD HH:MM:SS UTC`), O_SYNC writes for real-time persistence | PTY data sanitization with `regexp.Compile()`, per-line timestamp prefixing, file operations with `os.O_SYNC` flag for immediate disk flush |
+| **Policy Engine** | `internal/policy` | Cilium policy generation (3-zone model: Infra/Maintenance/Target), validation, apply/delete orchestration with K8s API | Generates CiliumNetworkPolicy CRD YAML, applies via kubectl exec/API, validates CIDR/domain format, manages policy lifecycle |
+| **PTY Recorder** | `internal/recorder` | Terminal session capture, ANSI stripping, safety loop respawning on bash exit, session lifecycle coordination | Captures PTY master/slave, coordinates with logger and signature modules, implements safety loop preventing accidental session termination |
+| **TUI** | `internal/tui` | Interactive banner display, scope prompts (double-Enter for finalization), Pentester/Client metadata capture | Formatted banner, prompts with input validation, double-Enter state machine for list finalization |
+| **Validation** | `internal/validation` | IP/CIDR/domain normalization, guardrails for policy scope definition, format validation | CIDR parsing with `net.ParseCIDR()`, domain validation, prevents invalid scope definitions |
+| **Signature** | `internal/signature` | SHA256 hashing of session content, SSH Ed25519 signing (OpenSSH format), FORENSIC SEAL appending | Computes SHA256 of log content, signs with SSH private key, appends structured seal block to log |
+| **Discovery** | `internal/discovery` | Kubernetes API auto-discovery via `$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT`, DNS server detection from `resolv.conf` | Reads K8s in-pod environment variables, parses `/etc/resolv.conf` for DNS servers |
+| **Backup Manager** | `cmd/backup-manager` | Gold Master source archival using `git archive`, reproducible checksums, audit trail of releases | Uses `git archive` for deterministic source snapshots, generates SHA256 for verification |
+| **Release Manager** | `cmd/release-manager` | Deterministic binary packaging, `GOOS=linux GOARCH=amd64` flags, reproducible artifact generation | Builds with fixed flags, tars binaries, generates SHA256 for release artifacts |
 
 ### Session Lifecycle (Happy Path)
 
@@ -306,3 +309,132 @@ sudo journalctl -u n-audit-sentinel -f
 - Signing directory must be restricted: `chmod 700`
 - Run as `root` for full capabilities (or review required capabilities for non-root)
 - See [deploy/n-audit-sentinel.service](deploy/n-audit-sentinel.service) for complete unit configuration
+
+---
+
+## Advanced Technical Architecture
+
+### Go Concurrency & Goroutine Model
+
+N-Audit Sentinel employs a hierarchical goroutine architecture for coordinating simultaneous operations:
+
+- **Main Goroutine (PID 1):** Orchestrates signal handlers (SIGTERM, SIGUSR1, SIGCHLD), manages bash respawn loop, coordinates teardown sequence
+- **Logger Goroutine:** Asynchronous PTY data processing with per-line ANSI stripping and timestamp injection
+- **Policy Goroutine:** Cilium API interaction for policy apply/delete with exponential backoff on failures
+- **Recorder Goroutine:** Continuous PTY master read with non-blocking I/O, buffering, and coordination with logger
+
+**Synchronization:** Uses channels for signaling across goroutines, ensuring graceful shutdown coordination.
+
+### Kubernetes Network Layer Integration
+
+**In-Pod Environment Detection:**
+- Reads `$KUBERNETES_SERVICE_HOST` and `$KUBERNETES_SERVICE_PORT` environment variables injected by Kubelet
+- Default values: `10.43.0.1:443` (K3s) or `10.96.0.1:443` (standard K8s)
+- Validates API server connectivity before proceeding
+
+**DNS Resolution:**
+- Parses `/etc/resolv.conf` for nameserver entries
+- Reads search domain from pod's DNS config
+- Cilium L7 DNS policies inspect and enforce domain-level access
+
+**Service Account Authentication:**
+- Mounts ServiceAccount token at `/var/run/secrets/kubernetes.io/serviceaccount/token`
+- Used for CiliumNetworkPolicy CRUD operations
+- Bearer token included in API requests to Kubernetes
+
+### Cilium 3-Zone Network Policy Model
+
+The policy engine implements a sophisticated 3-zone segmentation:
+
+**Zone 1 (Infrastructure):**
+- Kubernetes API Server (`10.43.0.1:443`)
+- CoreDNS resolvers (typically `10.43.0.10`)
+- Essential cluster services for operation
+- Allowed: Always (required for pod functionality)
+
+**Zone 2 (Maintenance):**
+- Package repositories (HTTP/HTTPS)
+- Update sources
+- Tool installation endpoints
+- Allowed: Only for utility setup phase
+
+**Zone 3 (Target/Scope):**
+- User-defined audit scope (IPs, CIDRs, domains)
+- Dynamically populated from TUI input
+- Enforced at L3 (IP-level) and L7 (DNS/HTTP domain-level)
+- Allowed: Only if explicitly in scope
+
+**Policy Enforcement Mechanism:**
+- Cilium converts policies to eBPF programs
+- eBPF hooks at kernel network stack (XDP, TC)
+- Stateless L3 packet filtering + stateful L7 proxy inspection
+- Real-time counters and visibility
+
+### Cryptographic Sealing & Attestation
+
+**SHA256 Content Hashing:**
+- Computed over entire session log (excluding seal block)
+- Uses Go's `crypto/sha256` package
+- Hex-encoded (64-character string)
+- Prevents undetected modifications to audit trail
+
+**SSH Ed25519 Signing:**
+- Private key: 32-byte Ed25519 private key from OpenSSH format
+- Public key: 32-byte compressed point
+- Signature: 64-byte signature over SHA256 hash
+- OpenSSH format for compatibility with standard tooling
+
+**FORENSIC SEAL Block Structure:**
+```
+=== FORENSIC SEAL ===
+SHA256 Hash: <64-char hex>
+SSH Signature (Base64): <base64-encoded 64-byte signature>
+=====================
+```
+
+**Verification Chain:**
+1. Extract content (lines before FORENSIC SEAL)
+2. Compute SHA256 of extracted content
+3. Compare with SHA256 Hash line
+4. Validate SSH signature using public key
+
+### PTY Handling & Terminal Emulation
+
+**PTY Master/Slave Architecture:**
+- N-Audit opens `/dev/ptmx` for master side
+- Spawns `/bin/bash` with slave side attached
+- Raw mode: Disables canonical input processing
+- Direct pass-through of data between user terminal and bash
+
+**Safety Loop Implementation:**
+```go
+for {
+    select {
+    case sig := <-sigChan:
+        if sig == SIGUSR1 { 
+            // Graceful exit
+            return
+        }
+    case <-cmdChan:
+        // Process user command
+    }
+    bash.Wait()  // Respawn if exited unexpectedly
+}
+```
+Ensures `exit` or Ctrl+D doesn't terminate the pod.
+
+### Testing & Coverage Metrics
+
+- **Overall Coverage:** 49%
+- **High-Coverage Modules:**
+  - `internal/signature` — 91.3% (cryptographic operations)
+  - `internal/tui` — 88.7% (user interaction flows)
+  - `internal/discovery` — 95.5% (environment detection)
+- **Test Count:** 49 unit tests across 9 packages
+- **Benchmarks:** Signature performance (hash/sign ops), policy generation time
+
+**Critical Paths Covered:**
+- Policy generation for various scope combinations
+- ANSI stripping across diverse terminal output
+- Graceful shutdown coordination
+- SHA256/SSH signature verification
