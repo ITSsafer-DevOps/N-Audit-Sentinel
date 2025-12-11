@@ -1,5 +1,9 @@
 # N-Audit Sentinel
 
+**Version:** v1.0.0-Beta
+
+**Status:** Production-Ready (Beta)
+
 N-Audit Sentinel is an enterprise-grade Kubernetes forensic auditing and controlled penetration testing tool. It provides a secure runtime environment for auditors and pentesters to execute scoped commands inside Kubernetes workloads, while producing tamper-evident cryptographic seals for all recorded session artifacts.
 
 This document is written in English and provides an overview of architecture, deployment, testing, and operational practices for production-ready use.
