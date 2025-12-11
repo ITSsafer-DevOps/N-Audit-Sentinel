@@ -38,6 +38,11 @@ Thumbs.db
 *.tar.gz
 *.zip
 
+# Coverage files and temporary output
+coverage*.out
+*.out
+
+
 # Terraform local state (if added later)
 .terraform/
 terraform.tfstate*

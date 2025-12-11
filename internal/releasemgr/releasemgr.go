@@ -28,6 +28,14 @@ func BuildTarget(pkgPath, dest string, goos, goarch string) error {
 	return cmd.Run()
 }
 
+// DownloadModules runs `go mod download` to populate module cache and fetch dependencies
+func DownloadModules() error {
+	cmd := exec.Command("go", "mod", "download")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 // CreateTarGz creates a tar.gz archive at outPath containing the files in files (paths are relative or absolute)
 func CreateTarGz(outPath string, files []string) error {
 	f, err := os.Create(outPath)

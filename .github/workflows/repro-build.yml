@@ -58,17 +58,54 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p out
-          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o out/n-audit-sentinel ./cmd/n-audit-sentinel
-          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o out/n-audit ./cmd/n-audit-cli
-          tar -C out -czf n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz n-audit-sentinel n-audit
-          sha256sum n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz > n-audit-sentinel-${GITHUB_REF#refs/tags/}-linux-amd64.tar.gz.sha256
+          
+          # Download all Go modules to ensure dependencies are available
+          echo "Downloading Go modules..."
+          go mod download
+          
+          # Run unit tests for newly added utilities and collect coverage
+          echo "Running unit tests for new utilities..."
+          go test ./internal/releasemgr ./internal/backupmgr -coverprofile=coverage_utils.out -v || (echo 'tests failed' && exit 1)
+          
+          # Compute coverage percentage for the utilities and enforce threshold
+          COVER_UTILS=$(go tool cover -func=coverage_utils.out | grep total: | awk '{print $3}')
+          echo "Utilities coverage: $COVER_UTILS"
+          
+          # Strip trailing percent sign and convert to integer (rounded)
+          NUM=$(echo "$COVER_UTILS" | sed 's/%$//')
+          PERCENT=$(printf "%.0f" "$NUM")
+          echo "Utilities coverage (rounded percent): $PERCENT"
+          
+          # Enforce 80% coverage threshold
+          if [ "$PERCENT" -lt 80 ]; then
+            echo "ERROR: Coverage for utilities is below 80%: $COVER_UTILS" >&2
+            exit 1
+          fi
+          
+          echo "✓ Coverage threshold passed (${PERCENT}% >= 80%)"
+
+          # Build full product via release-manager (which downloads modules)
+          echo "Building full product binaries..."
+          go run ./cmd/release-manager --version "${GITHUB_REF#refs/tags/}" --out out
+          
+          # List generated artifacts
+          echo "Generated artifacts:"
+          ls -lh out/ || true
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage_utils.out
+            analysis/coverage*
 
       - name: Create GitHub Release and upload artifacts
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            n-audit-sentinel-${{ github.ref_name }}-linux-amd64.tar.gz
-            n-audit-sentinel-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
+            out/n-audit-sentinel-${{ github.ref_name }}-linux-amd64.tar.gz
+            out/n-audit-sentinel-${{ github.ref_name }}-linux-amd64.tar.gz.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           

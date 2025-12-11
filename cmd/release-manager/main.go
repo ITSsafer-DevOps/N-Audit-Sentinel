@@ -21,15 +21,22 @@ func main() {
 		fmt.Fprintln(os.Stderr, "failed to create out dir:", err)
 		os.Exit(2)
 	}
-	// Build binaries (limited to newly scaffolded CLIs to avoid external dep resolution in this environment)
-	bin1 := filepath.Join(*outdir, "release-manager")
-	if err := releasemgr.BuildTarget("./cmd/release-manager", bin1, "", ""); err != nil {
-		fmt.Fprintln(os.Stderr, "build failed:", err)
+	// Ensure module dependencies are downloaded so we can build the full product
+	fmt.Println("Downloading module dependencies...")
+	if err := releasemgr.DownloadModules(); err != nil {
+		fmt.Fprintln(os.Stderr, "failed to download modules:", err)
+		// continue — sometimes network issues; attempt builds anyway
+	}
+
+	// Build the product binaries
+	bin1 := filepath.Join(*outdir, "n-audit-sentinel")
+	if err := releasemgr.BuildTarget("./cmd/n-audit-sentinel", bin1, "linux", "amd64"); err != nil {
+		fmt.Fprintln(os.Stderr, "build n-audit-sentinel failed:", err)
 		os.Exit(2)
 	}
-	bin2 := filepath.Join(*outdir, "backup-manager")
-	if err := releasemgr.BuildTarget("./cmd/backup-manager", bin2, "", ""); err != nil {
-		fmt.Fprintln(os.Stderr, "build failed:", err)
+	bin2 := filepath.Join(*outdir, "n-audit")
+	if err := releasemgr.BuildTarget("./cmd/n-audit-cli", bin2, "linux", "amd64"); err != nil {
+		fmt.Fprintln(os.Stderr, "build n-audit-cli failed:", err)
 		os.Exit(2)
 	}
 
