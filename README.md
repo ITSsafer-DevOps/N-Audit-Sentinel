@@ -39,25 +39,25 @@ The daemon runs as PID 1 inside an audit container, exposes a small TUI for sess
 
 1. Build the binaries:
 
-```bash
+```
 make build
 ```
 
 2. Run unit tests:
 
-```bash
+```
 make test
 ```
 
 3. Run e2e tests on a local KinD cluster:
 
-```bash
+```
 make test-e2e ENV=k8s
 ```
 
 4. Build release archives:
 
-```bash
+```
 make release VERSION=v1.0.0-Beta
 ```
 
@@ -261,24 +261,24 @@ For complete deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md). For ve
    ```
 
 2. **Prepare Node Storage**
-   ```bash
+```
    sudo mkdir -p /mnt/n-audit-data/signing
    sudo ssh-keygen -t ed25519 -N "" -f /mnt/n-audit-data/signing/id_ed25519 -C "n-audit"
    sudo chmod 600 /mnt/n-audit-data/signing/id_ed25519
    ```
 
 3. **Create ServiceAccount + RBAC**
-   ```bash
+```
    kubectl apply -f beta-test-deployment/serviceaccount.yaml
    ```
 
 4. **Deploy Pod**
-   ```bash
+```
    kubectl apply -f beta-test-deployment/pod-fixed.yaml
    ```
 
 5. **Attach and Operate**
-   ```bash
+```
    kubectl attach -it n-audit-sentinel -c sentinel
    # Follow TUI prompts: Pentester, Client, Scope (IPs/Domains)
    # Exit: n-audit exit (graceful teardown with seal)
@@ -311,7 +311,7 @@ Operational notes
 ## Build & Release
 
 ### Local Development Build
-```bash
+```
 # Build individual binaries
 go build -o bin/n-audit-sentinel ./cmd/n-audit-sentinel
 go build -o bin/n-audit ./cmd/n-audit
@@ -321,7 +321,7 @@ go test ./...
 ```
 
 ### Release Build (Production)
-```bash
+```
 # Create release artifacts with Makefile
 make release VERSION=v1.0.0-Beta
 ```
@@ -332,7 +332,7 @@ make release VERSION=v1.0.0-Beta
 - `gold-master-<timestamp>.tar.gz` — Source code archive (optional)
 
 ### Verification
-```bash
+```
 # Verify SHA256
 sha256sum -c n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz.sha256
 
@@ -348,7 +348,7 @@ Manifest files are provided in `beta-test-deployment/`:
 - `serviceaccount.yaml` — ServiceAccount and RBAC bindings for Cilium
 - `pod-fixed.yaml` — Complete pod definition with mounts and env vars
 
-```bash
+```
 kubectl apply -f beta-test-deployment/serviceaccount.yaml
 kubectl apply -f beta-test-deployment/pod-fixed.yaml
 ```
@@ -356,7 +356,7 @@ kubectl apply -f beta-test-deployment/pod-fixed.yaml
 ### Method 2: Terraform (Reproducible)
 For automated, version-controlled deployments, use `deploy/terraform/`:
 
-```bash
+```
 cd deploy/terraform
 terraform init
 terraform apply -auto-approve \

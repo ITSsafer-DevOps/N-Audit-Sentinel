@@ -177,7 +177,7 @@ Run `sudo tail -f /mnt/n-audit-data/session.log` on the node that hosts the pod.
 ### Log Format Validation
 
 **Check log structure:**
-```bash
+```
 kubectl exec n-audit-sentinel -- head -20 /var/lib/n-audit/session.log
 ```
 
@@ -197,7 +197,7 @@ kubectl exec n-audit-sentinel -- head -20 /var/lib/n-audit/session.log
 
 **Check that logs contain NO escape sequences:**
 
-```bash
+```
 # Bad (contains ANSI codes):
 # $ grep -E '\x1b\[[0-9;]*m' /var/lib/n-audit/session.log && echo "FAIL: ANSI found"
 
@@ -208,7 +208,7 @@ kubectl exec n-audit-sentinel -- grep -c $'\x1b' /var/lib/n-audit/session.log
 
 **All lines must have timestamps:**
 
-```bash
+```
 kubectl exec n-audit-sentinel -- \
   awk '!/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}/' \
   /var/lib/n-audit/session.log | wc -l

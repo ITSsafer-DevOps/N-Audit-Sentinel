@@ -53,7 +53,7 @@ func main(){
 ```
 
 ### 3. Test Safety Loop
-```bash
+```
 exit
 ```
 
@@ -94,7 +94,7 @@ func main(){ exec.Command("kubectl","exec","n-audit-sentinel","--","/usr/local/b
 - The shell will terminate (the Pod may restart or stop depending on `restartPolicy`)
 
 **Expected logs:**
-```bash
+```
 kubectl logs n-audit-sentinel --tail=10
 # Contains: [N-Audit] Received signal user defined signal 1. Initiating shutdown...
 ```
@@ -162,7 +162,7 @@ if os.Getenv("N_AUDIT_DEBUG") == "true" {
 
 ### Option 3: Non-interactive testing mode
 Set environment variables:
-```bash
+```
 N_AUDIT_PENTESTER_NAME="John Doe"
 N_AUDIT_CLIENT_NAME="Acme Corp"
 N_AUDIT_SCOPE_IPS="192.168.1.0/24,10.0.0.0/8"

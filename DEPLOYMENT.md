@@ -234,30 +234,35 @@ spec:
 
 **Apply the manifest:**
 
-```bash
-# Option A: Save to file and apply
-cat > pod.yaml <<'EOF'
-# [paste YAML above]
-EOF
-kubectl apply -f pod.yaml
+Use `kubectl apply` or the programmatic client in `docs/DEPLOYMENT_HELPERS.md`.
 
-# Option B: Apply directly
-kubectl apply -f beta-test-deployment/pod-fixed.yaml
-```
+Go wrapper (apply manifest and verify):
 
-**Verify pod is running:**
-
-```bash
-kubectl get pods n-audit-sentinel
-kubectl describe pod n-audit-sentinel
+```go
+package main
+import (
+  "fmt"
+  "os/exec"
+)
+func main(){
+  // Apply manifest file
+  exec.Command("kubectl","apply","-f","beta-test-deployment/pod-fixed.yaml").Run()
+  // Verify pod state
+  out,_ := exec.Command("kubectl","get","pods","n-audit-sentinel").CombinedOutput()
+  fmt.Println(string(out))
+}
 ```
 
 ## Step 5: Attach and Operate
 
 ### Start an Audit Session
 
-```bash
-kubectl attach -it n-audit-sentinel -c sentinel
+Attach example (Go wrapper):
+
+```go
+cmd := exec.Command("kubectl","attach","-it","n-audit-sentinel","-c","sentinel")
+cmd.Stdin = os.Stdin; cmd.Stdout = os.Stdout; cmd.Stderr = os.Stderr
+cmd.Run()
 ```
 
 **Follow TUI Prompts:**
@@ -275,8 +280,10 @@ Execute your audit commands. All activity is logged with:
 ### End the Session Gracefully
 
 **From another terminal:**
-```bash
-kubectl exec n-audit-sentinel -c sentinel -- /usr/local/bin/n-audit
+Programmatic graceful shutdown (Go):
+
+```go
+exec.Command("kubectl","exec","n-audit-sentinel","-c","sentinel","--","/usr/local/bin/n-audit").Run()
 ```
 
 This sends SIGUSR1 to PID 1, triggering:
@@ -292,11 +299,18 @@ This sends SIGUSR1 to PID 1, triggering:
 ### Access Session Log
 
 **From pod:**
-```bash
-kubectl exec -it n-audit-sentinel -- tail -f /var/lib/n-audit/session.log
+
+Programmatic tail (Go):
+
+```go
+cmd := exec.Command("kubectl","exec","-it","n-audit-sentinel","--","tail","-f","/var/lib/n-audit/session.log")
+cmd.Stdout = os.Stdout; cmd.Stderr = os.Stderr; cmd.Run()
 ```
 
 **From host (via hostPath):**
+
+On the node hosting the pod run:
+
 ```bash
 sudo tail -f /mnt/n-audit-data/session.log
 ```
@@ -304,23 +318,33 @@ sudo tail -f /mnt/n-audit-data/session.log
 ### Validate Log Integrity
 
 **Check for FORENSIC SEAL block:**
-```bash
-sudo tail -20 /mnt/n-audit-data/session.log
-# Expected:
-# === FORENSIC SEAL ===
-# SHA256 Hash: <64-char hex string>
-# SSH Signature (Base64): <base64 string>
-# =====================
+Use the verification helper in `docs/DEPLOYMENT_HELPERS.md`. Example programmatic check (Go):
+
+```go
+// Read /mnt/n-audit-data/session.log until "=== FORENSIC SEAL ===" and compute sha256 on preceding bytes
+package main
+import (
+  "bufio"
+  "crypto/sha256"
+  "fmt"
+  "os"
+)
+func main(){
+  f, _ := os.Open("/mnt/n-audit-data/session.log")
+  defer f.Close()
+  h := sha256.New()
+  s := bufio.NewScanner(f)
+  for s.Scan() {
+    line := s.Text()
+    if line == "=== FORENSIC SEAL ===" { break }
+    h.Write([]byte(line+"\n"))
+  }
+  fmt.Printf("sha256: %x\n", h.Sum(nil))
+}
 ```
 
 **Verify SHA256:**
-```bash
-# Extract seal block and exclude it from hash
-awk '/^=== FORENSIC SEAL ===/{exit} {print}' /mnt/n-audit-data/session.log | sha256sum
-
-# Compare with seal value
-grep "SHA256 Hash:" /mnt/n-audit-data/session.log
-```
+(See Go example above for programmatic extraction and hash computation.)
 
 ## Troubleshooting
 
@@ -334,24 +358,13 @@ grep "SHA256 Hash:" /mnt/n-audit-data/session.log
 
 ### Debugging Commands
 
-```bash
-# Check pod status and events
-kubectl describe pod n-audit-sentinel
 
-# View pod stdout/stderr logs
-kubectl logs n-audit-sentinel -f
+Programmatic debugging snippets (useful in automation; see `docs/DEPLOYMENT_HELPERS.md`):
 
-# Inspect ServiceAccount binding
-kubectl get serviceaccount n-audit-sentinel -o yaml
-
-# Test API connectivity from pod
-kubectl exec n-audit-sentinel -- sh -c 'curl -s https://kubernetes.default/api/v1 | head'
-
-# Check Cilium policy status
-kubectl get ciliumnetworkpolicies
-
-# Inspect hostPath permissions
-sudo ls -la /mnt/n-audit-data/signing/
+```go
+exec.Command("kubectl","describe","pod","n-audit-sentinel").Run()
+exec.Command("kubectl","logs","n-audit-sentinel","-f").Run()
+exec.Command("kubectl","get","ciliumnetworkpolicies").Run()
 ```
 
 ## Cross-References
@@ -461,20 +474,18 @@ Kubernetes API server checks:
 ### Image Import/Load Strategies
 
 **Local K3s (containerd backend):**
-```bash
-docker save image:tag | sudo k3s ctr images import -
-# Direct binary format into K3s container runtime
+Use the Go helper in `docs/DEPLOYMENT_HELPERS.md` or run the Makefile target. Example wrapper:
+
+```go
+exec.Command("sh","-c","docker save image:tag | sudo k3s ctr images import -").Run()
 ```
 
 **Standard K8s (Docker daemon):**
-```bash
-docker build -t image:tag .
-# Images automatically available to kubelet (shares Docker daemon)
+Use `make release` or the build helper; Go wrapper example:
+
+```go
+exec.Command("docker","build","-t","image:tag",".").Run()
 ```
 
 **Remote Registry (Production):**
-```bash
-docker push registry.example.com/image:tag
-# Node pulls via `imagePullPolicy: IfNotPresent` (default)
-# Requires ImagePullSecret if private registry
-```
+Use the registry push helper or `docker push` as required; for automation, call `exec.Command("docker","push",...)` from Go.

@@ -33,21 +33,6 @@ Version: v1.0.0-Beta
 
 Notes and recommendations:
 
-- Although checksums are stored in-repo, the release tarballs are placed in `releases/` and are ignored by default. You can publish them to GitHub Releases or a secured artifact repository.
-- For ongoing security, enable a CI secret-scanning job and pre-commit hooks to prevent accidental commits of credentials.
-- Consider rotating external credentials if they may have been exposed outside this repository.
-# Finalization Report (Phases 1-7)
-
-Generated: 2025-12-11T00:00:00Z (UTC)
-
-Summary:
-
-- Phase 1: Inventory — completed
-- Phase 2: Diagrams & badges — completed
-- Phase 3: Source polish — completed
-- Phase 4: Fresh build — completed
-- Phase 5: Backups & checksums — completed
-- Phase 6: Cleanup — completed
 - Phase 7: Verification — completed
 
 Artifacts and locations:
