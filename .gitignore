@@ -1,3 +1,18 @@
+# Binaries
+/bin/
+/*.tar.gz
+/*.sha256
+
+# IDE
+.vscode/
+.idea/
+
+# Go
+/vendor/
+*.test
+
+# Local
+*.local
 # Go build artifacts
 bin/
 out/

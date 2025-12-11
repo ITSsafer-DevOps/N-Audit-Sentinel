@@ -1,0 +1,14 @@
+Source: n-audit-sentinel
+Section: utils
+Priority: optional
+Maintainer: Kristián Kašník <itssafer@itssafer.org>
+Build-Depends: debhelper (>= 11), golang-any
+Standards-Version: 4.5.0
+Homepage: https://github.com/ITSsafer-DevOps/N-Audit-Sentinel
+
+Package: n-audit-sentinel
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: N-Audit Sentinel - Kubernetes forensic auditing tool
+ N-Audit Sentinel provides a secure runtime for audited penetration testing
+ and cryptographically-sealed session recording for compliance and forensics.

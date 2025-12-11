@@ -1,5 +1,92 @@
 # N-Audit Sentinel
 
+N-Audit Sentinel is an enterprise-grade Kubernetes forensic auditing and controlled penetration testing tool. It provides a secure runtime environment for auditors and pentesters to execute scoped commands inside Kubernetes workloads, while producing tamper-evident cryptographic seals for all recorded session artifacts.
+
+This document is written in English and provides an overview of architecture, deployment, testing, and operational practices for production-ready use.
+
+## Key Features
+
+- PID 1 runtime designed for containerized operation, with graceful shutdown and signal handling.
+- Cryptographic sealing of session artifacts using SHA256 and SSH-signer compatible signatures.
+- Dynamic generation and application of Cilium network policies for microsegmentation (L3/L7 enforcement).
+- Interactive TUI for auditors to define scope (IPs, CIDRs, domains) at runtime.
+- Comprehensive test harnesses: unit, integration, and environment-specific end-to-end tests.
+- Enterprise-grade documentation, release artifacts, and packaging for Debian/Kali.
+
+## Architecture Overview
+
+N-Audit Sentinel is implemented in Go and organized in a modular layout. The main components are:
+
+- `cmd/` - Entrypoints for the daemon (`n-audit-sentinel`), CLI components, and release tooling.
+- `internal/` - Reusable internal packages such as Kubernetes helpers, Cilium policy builders, logging and seal utilities.
+- `deploy/` - Manifests and deployment examples for multiple Kubernetes distributions (K3s, upstream K8s, MicroShift, Talos, OpenShift).
+- `tests/` - Structured tests grouped by unit/integration/e2e and by environment.
+
+The daemon runs as PID 1 inside an audit container, exposes a small TUI for session configuration, and uses a combination of in-pod enforcement plus Cilium NetworkPolicy objects to ensure scope enforcement.
+
+## Requirements
+
+- Go 1.25.x or newer
+- Docker or container runtime for building images
+- `kubectl` for interacting with clusters
+- Optional: K3s, KinD, MicroShift, Talos, or OpenShift for full e2e testing
+
+## Quick Start (Local development)
+
+1. Build the binaries:
+
+```bash
+make build
+```
+
+2. Run unit tests:
+
+```bash
+make test
+```
+
+3. Run e2e tests on a local KinD cluster:
+
+```bash
+make test-e2e ENV=k8s
+```
+
+4. Build release archives:
+
+```bash
+make release VERSION=v1.0.0-Beta
+```
+
+## Threat Model and Security Considerations
+
+N-Audit Sentinel is a tool for controlled security testing and forensic auditing. It introduces powerful capabilities and must be used under strict procedural controls. Key considerations:
+
+- Only trained auditors must have access to running instances. Access control and RBAC must be strictly enforced.
+- Private keys used for signing should be protected and managed via a secure keystore or external KMS.
+- HostPath mounts and persistent volumes must be configured with appropriate permissions.
+- The application must run in a dedicated namespace with minimal privileges required.
+
+## Testing Strategy
+
+Testing is organized into unit, integration, and e2e suites. Unit tests are fast and isolated; integration tests use mocks and temporary directories; e2e tests require a cluster and are organized by environment under `tests/e2e/`.
+
+CI runs unit tests and a KinD-based e2e by default. Additional e2e providers (K3s, Talos, MicroShift, OpenShift) are supported via optional CI jobs or by running locally.
+
+## Contributing
+
+Please see `CONTRIBUTING.md` for contribution guidelines, code style, and release procedures.
+
+## License
+
+This repository is licensed under the MIT License. See the `LICENSE` file for details.
+
+## Contact
+
+Developer: Kristián Kašník
+Email: itssafer@itssafer.org
+LinkedIn: linkedin.com/in/kristián-kašník-03056a377
+# N-Audit Sentinel
+
 ```
 ███╗   ██╗       █████╗ ██╗   ██╗██████╗ ██╗████████╗    ███████╗███████╗███╗   ██╗████████╗██╗███╗   ██╗███████╗██╗     
 ████╗  ██║      ██╔══██╗██║   ██║██╔══██╗██║╚══██╔══╝    ██╔════╝██╔════╝████╗  ██║╚══██╔══╝██║████╗  ██║██╔════╝██║     
