@@ -26,11 +26,11 @@ flowchart TB
 On the node (K3s example):
 ```bash
 # From repo root
-make release VERSION=v1.0.0-final
+make release VERSION=v1.0.0-Beta
 cd beta-test-deployment
-sudo docker build -t n-audit-sentinel:v1.0.0-final .
+sudo docker build -t n-audit-sentinel:v1.0.0-Beta .
 # Import to k3s containerd
-sudo docker save n-audit-sentinel:v1.0.0-final | sudo k3s ctr images import -
+sudo docker save n-audit-sentinel:v1.0.0-Beta | sudo k3s ctr images import -
 ```
 
 If you use a registry, push and pull instead of importing.
@@ -42,7 +42,7 @@ terraform init
 terraform apply -auto-approve \
 	-var="namespace=default" \
 	-var="image_name=n-audit-sentinel" \
-	-var="image_tag=v1.0.0-final"
+	-var="image_tag=v1.0.0-Beta"
 ```
 Terraform will create the pod with `app: n-audit-sentinel` label, required volumes, and service account bindings. You can still use hostPath or switch to a storage class via variables.
 
@@ -111,7 +111,7 @@ spec:
 		runAsUser: 0
 	containers:
 	- name: sentinel
-		image: n-audit-sentinel:v1.0.0-final
+		image: n-audit-sentinel:v1.0.0-Beta
 		stdin: true
 		tty: true
 		env:

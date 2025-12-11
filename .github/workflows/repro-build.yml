@@ -42,12 +42,6 @@ jobs:
           echo "Running staticcheck"
           staticcheck ./...
 
-      - name: Run project static analysis script
-        run: |
-          set -euo pipefail
-          echo "Running scripts/analysis/run_static_analysis.sh"
-          ./scripts/analysis/run_static_analysis.sh
-
       - name: Upload analysis artifacts
         uses: actions/upload-artifact@v4
         with:

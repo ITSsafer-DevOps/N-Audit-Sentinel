@@ -17,6 +17,8 @@
 
 Note: This repository contains only source code and release metadata (checksums). Binary release artifacts are produced by the `release-manager` and are not stored in the Git history.
 
+Important: Legacy shell scripts have been removed from the repository as part of the final cleanup. Use the Go-based utilities under `cmd/` (`release-manager`, `backup-manager`) for deterministic builds, packaging, and archival. CI workflows were updated to use these tools and no longer depend on shell scripts.
+
 N-Audit Sentinel is a Kubernetes‑native forensic wrapper that runs as PID 1 inside a Kali Linux pod. It hardens network access with Cilium, guarantees clean and human‑readable logs, and seals every session with a cryptographic signature.
 
 ## What, Why, How
@@ -111,7 +113,7 @@ sequenceDiagram
 For a full deployment guide (K3s/K8s), see `DEPLOYMENT.md`. For verification steps, see `VERIFICATION_GUIDE.md`.
 
 Minimal workflow
-1) Build release: `make release VERSION=v1.0.0-final`
+1) Build release: `make release VERSION=v1.0.0-Beta`
 2) Prepare hostPath on the node: `/mnt/n-audit-data` with subdir `signing/` and an Ed25519 key `id_ed25519`
 3) Create ServiceAccount + RBAC for Cilium CRDs
 4) Run the pod with `serviceAccountName` and mount `/var/lib/n-audit` to the hostPath
@@ -155,7 +157,7 @@ go build -o bin/n-audit ./cmd/n-audit
 
 Create a release artifact
 ```bash
-make release VERSION=v1.0.0-final
+make release VERSION=v1.0.0-Beta
 ```
 Artifacts
 - `n-audit-sentinel-<version>-linux-amd64.tar.gz`
