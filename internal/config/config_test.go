@@ -1,7 +1,5 @@
 package config
 
-package config
-
 import (
     "os"
     "testing"
@@ -36,4 +34,3 @@ func TestGetEnvFallbackAlternate(t *testing.T) {
     }
     os.Unsetenv(key)
 }
-        t.Fatalf("expected env 'baz', got '%s'", v2)
