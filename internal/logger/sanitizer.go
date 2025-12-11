@@ -9,9 +9,10 @@ package logger
 import (
 	"bytes"
 	"io"
-	"regexp"
 	"sync"
 	"time"
+
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/logging"
 )
 
 // Precompiled regex matching ANSI escape sequences (CSI, OSC, single chars).
@@ -21,16 +22,14 @@ import (
 //   - a single 7-bit C1 control in range @-Z\\-_
 //
 // This covers common color codes, cursor movement, erase commands, etc.
-var ansiRegex = regexp.MustCompile("\x1b(?:\\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])")
-
-// StripANSI removes ANSI escape sequences from the provided byte slice.
-// It is intended for sanitizing PTY output prior to timestamping and logging.
+// StripANSI removes ANSI escape sequences from the provided byte slice
+// by delegating to the canonical internal/logging package.
 func StripANSI(data []byte) []byte {
 	if len(data) == 0 {
 		return data
 	}
-	cleaned := ansiRegex.ReplaceAll(data, []byte{})
-	return cleaned
+	clean := logging.StripANSI(string(data))
+	return []byte(clean)
 }
 
 // TimestampedWriter wraps an io.Writer and prepends RFC3339Nano timestamps
