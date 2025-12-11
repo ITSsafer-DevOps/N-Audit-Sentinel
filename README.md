@@ -11,31 +11,55 @@
 ╚═╝  ╚═══╝      ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝   ╚═╝       ╚══════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝
 ```
 
-- Developer: Kristián Kašník
-- Contact: itssafer@itssafer.org
-- License: MIT License (Open Source)
+**Developer:** Kristián Kašník  
+**Contact:** itssafer@itssafer.org  
+**License:** MIT License (Open Source)
 
-Note: This repository contains only source code and release metadata (checksums). Binary release artifacts are produced by the `release-manager` and are not stored in the Git history.
+### Repository Contents
+This repository contains:
+- Complete Go source code for the N-Audit Sentinel application
+- Internal packages with comprehensive test coverage (49% overall, 91%+ signature/policy/tui)
+- Go-based utilities for deterministic builds and packaging (`release-manager`, `backup-manager`)
+- Deployment manifests and Terraform configurations
+- Comprehensive documentation and verification guides
 
-Important: Legacy shell scripts have been removed from the repository as part of the final cleanup. Use the Go-based utilities under `cmd/` (`release-manager`, `backup-manager`) for deterministic builds, packaging, and archival. CI workflows were updated to use these tools and no longer depend on shell scripts.
+**Note:** Binary release artifacts (`.tar.gz`) are produced by the release pipeline and stored as GitHub Releases, not in Git history. Legacy shell scripts have been removed; use the Go utilities under `cmd/` for all build, packaging, and archival operations.
 
 N-Audit Sentinel is a Kubernetes‑native forensic wrapper that runs as PID 1 inside a Kali Linux pod. It hardens network access with Cilium, guarantees clean and human‑readable logs, and seals every session with a cryptographic signature.
 
-## What, Why, How
+## Core Principles
 
-## New Release & Backup Utilities
+**What:** N-Audit Sentinel is a Kubernetes-native forensic wrapper that provides controlled network access, cryptographic audit trails, and tamper-evident session recording.
 
-This repository now includes two Go-based utilities that replace legacy shell scripts:
+**Why:** Penetration testers need strong guarantees that their session scope is enforced, all commands are logged cleanly, and logs cannot be modified undetected. Cilium policies provide granular network enforcement; cryptographic seals provide integrity verification.
 
-- `cmd/release-manager`: deterministic build and packaging tool. Example:
+**How:** The application runs as PID 1 in a Kali Linux pod, discovers the Kubernetes API and DNS at startup, accepts scope from a TUI, applies Cilium network policies, and records all PTY activity with timestamps and a final cryptographic seal.
 
-  `go run ./cmd/release-manager --version v1.0.0-Beta --out out`
+## Go-Based Release & Backup Utilities
 
-- `cmd/backup-manager`: creates a deterministic source archive (Gold Master) and a `.sha256` checksum. Example:
+The project includes two production-grade Go utilities that replace legacy shell scripts:
 
-  `go run ./cmd/backup-manager --out gold-master-20251210T235959Z.tar.gz --ref HEAD`
+### release-manager
+**Location:** `cmd/release-manager`  
+**Purpose:** Builds binaries with deterministic flags, packages them into `.tar.gz` archives, and generates SHA256 checksums.
 
-These tools are intended for local reproduction and CI usage. See `cmd/*/README.md` for details.
+**Example:**
+```bash
+go run ./cmd/release-manager --version v1.0.0-Beta --out out
+# Creates: n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz
+#          n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz.sha256
+```
+
+### backup-manager
+**Location:** `cmd/backup-manager`  
+**Purpose:** Creates a Gold Master source archive using `git archive` and generates SHA256 checksums for reproducibility.
+
+**Example:**
+```bash
+go run ./cmd/backup-manager --out gold-master-20251210T235959Z.tar.gz --ref HEAD
+```
+
+Both utilities are tested, minimal, and designed for local development and CI pipelines. See `cmd/*/README.md` for complete usage documentation.
 ## Features at a Glance
 
 | Capability | What it does | Why it matters |
@@ -51,77 +75,113 @@ These tools are intended for local reproduction and CI usage. See `cmd/*/README.
 
 ## Architecture
 
+### Kubernetes Integration
+
 ```mermaid
 flowchart LR
-  subgraph Kubernetes Cluster
-    Pod([N-Audit Sentinel Pod])
-    Vol[(hostPath /var/lib/n-audit)]
-    API[(K8s API)]
-    DNS[(CoreDNS)]
-    CNP[[CiliumNetworkPolicy]]
+  subgraph K8sCluster [\"Kubernetes Cluster\"]
+    direction TB
+    Pod([\"N-Audit Sentinel Pod<br/>(PID 1 Runtime)\"])
+    Vol[(\"hostPath Volume<br/>/var/lib/n-audit\")]
+    API[(\"Kubernetes API<br/>Service Discovery\")]
+    DNS[(\"CoreDNS<br/>Domain Resolution\")]
+    CNP[[\"Cilium Network Policy<br/>Scope Enforcement\"]]
+    
+    Pod -->|auto-discover| API
+    Pod -->|auto-discover| DNS
+    Pod -->|create/delete| CNP
+    Pod <-->|mount| Vol
   end
 
-  User[Operator] -->|attach TTY| Pod
-  Pod -->|reads| API
-  Pod -->|resolves| DNS
-  Pod -.->|apply/delete| CNP
-  Pod <-->|mount| Vol
+  User[\"Pentester/Auditor\"] -->|kubectl attach TTY| Pod
+  
+  style Pod fill:#4A90E2,color:#fff,stroke:#2E5C8A,stroke-width:2px
+  style Vol fill:#50E3C2,color:#000,stroke:#2E8B74,stroke-width:2px
+  style CNP fill:#F5A623,color:#000,stroke:#B8770B,stroke-width:2px
 ```
 
-<!-- mermaid: validated -->
+### Core Modules
 
-Key modules
-- `cmd/n-audit-sentinel`: PID 1 runtime and session lifecycle
-- `cmd/n-audit`: helper to trigger graceful exit (sends SIGUSR1)
-- `internal/logger`: PTY sanitization + per‑line timestamps (`YYYY‑MM‑DD HH:MM:SS`)
-- `internal/policy`: Cilium policy generation/apply/delete
-- `internal/recorder`: PTY and safety loop
-- `internal/tui`: banner + prompts (double‑enter)
-- `internal/validation`: normalization and guardrails for IPs/CIDRs/domains
+| Module | Location | Purpose |
+|--------|----------|---------|
+| **PID 1 Runtime** | `cmd/n-audit-sentinel` | Process lifecycle, signal handling, session teardown |
+| **Exit Helper** | `cmd/n-audit` | Triggers graceful shutdown via SIGUSR1 |
+| **Logger** | `internal/logger` | ANSI stripping, per-line timestamp injection (`YYYY-MM-DD HH:MM:SS UTC`) |
+| **Policy Engine** | `internal/policy` | Cilium policy generation, validation, and enforcement |
+| **PTY Recorder** | `internal/recorder` | Terminal session capture with safety loop on exit |
+| **TUI** | `internal/tui` | Interactive banner and scope prompts (double-Enter to finalize) |
+| **Validation** | `internal/validation` | IP/CIDR/domain normalization and guardrails |
+| **Signature** | `internal/signature` | SHA256 hashing and SSH cryptographic sealing |
+| **Discovery** | `internal/discovery` | Kubernetes API and DNS auto-discovery |
+| **Backup Manager** | `cmd/backup-manager` | Gold Master archival with checksums |
+| **Release Manager** | `cmd/release-manager` | Deterministic artifact packaging |
 
-## Sequence (Happy Path)
+### Session Lifecycle (Happy Path)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant U as User
-    participant S as PID 1 (Sentinel)
-    participant K as K8s API
-    participant D as DNS
-    participant C as Cilium
-    participant B as /bin/bash (PTY)
+    actor User as Operator
+    participant Sentinel as "PID 1<br/>(Sentinel)"
+    participant K8s as "K8s API"
+    participant DNS as "CoreDNS"
+    participant Cilium as "Cilium CNI"
+    participant Bash as "/bin/bash<br/>(PTY)"
 
-    U->>S: Pod starts
-    S->>S: Discover API + DNS
-    S->>S: Init logger (strip ANSI, timestamp)
-    S->>U: Banner + prompts
-    U->>S: Pentester + Client
-    U->>S: Scope (IPs + Domains)
-    S->>C: Apply CNP (3 zones)
-    S->>B: Spawn bash (safety loop)
-    U->>B: Operate within scope
-    U->>S: n-audit exit (SIGUSR1)
-    S->>S: Close log, SHA‑256, SSH‑sign, append
-    S->>C: Delete CNP
-    S-->>U: Exit PID 1
+    User->>Sentinel: kubectl run pod
+    Sentinel->>K8s: Auto-discover API IP:PORT
+    Sentinel->>DNS: Auto-discover DNS servers
+    Sentinel->>Sentinel: Initialize logger (strip ANSI)
+    Sentinel->>User: Display banner + prompts
+    User->>Sentinel: Enter Pentester name
+    User->>Sentinel: Enter Client name
+    User->>Sentinel: Enter scope (IPs + Domains)
+    Sentinel->>Cilium: Create 3-zone policy<br/>(Infra, Maintenance, Target)
+    Sentinel->>Bash: Spawn shell with safety loop
+    User->>Bash: Execute audit commands
+    Bash->>Bash: Log commands (no ANSI, timestamps)
+    User->>Sentinel: n-audit exit (SIGUSR1)
+    Sentinel->>Sentinel: Compute SHA256 of log
+    Sentinel->>Sentinel: SSH-sign hash
+    Sentinel->>Sentinel: Append FORENSIC SEAL
+    Sentinel->>Cilium: Delete 3-zone policy
+    Sentinel->>User: Exit PID 1 (pod terminates)
 ```
-
-<!-- mermaid: validated -->
 
 ## Quick Start
 
-For a full deployment guide (K3s/K8s), see `DEPLOYMENT.md`. For verification steps, see `VERIFICATION_GUIDE.md`.
+For complete deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md). For verification and testing, see [VERIFICATION_GUIDE.md](VERIFICATION_GUIDE.md).
 
-Minimal workflow
-1) Build release: `make release VERSION=v1.0.0-Beta`
-2) Prepare hostPath on the node: `/mnt/n-audit-data` with subdir `signing/` and an Ed25519 key `id_ed25519`
-3) Create ServiceAccount + RBAC for Cilium CRDs
-4) Run the pod with `serviceAccountName` and mount `/var/lib/n-audit` to the hostPath
-5) `kubectl attach -it n-audit-sentinel -c sentinel` and follow the TUI
+### Minimal 5-Step Workflow
 
-Cross‑links
-- Deployment: `DEPLOYMENT.md`
-- Post‑deployment checks: `VERIFICATION_GUIDE.md`
+1. **Build Release**
+   ```bash
+   make release VERSION=v1.0.0-Beta
+   ```
+
+2. **Prepare Node Storage**
+   ```bash
+   sudo mkdir -p /mnt/n-audit-data/signing
+   sudo ssh-keygen -t ed25519 -N "" -f /mnt/n-audit-data/signing/id_ed25519 -C "n-audit"
+   sudo chmod 600 /mnt/n-audit-data/signing/id_ed25519
+   ```
+
+3. **Create ServiceAccount + RBAC**
+   ```bash
+   kubectl apply -f beta-test-deployment/serviceaccount.yaml
+   ```
+
+4. **Deploy Pod**
+   ```bash
+   kubectl apply -f beta-test-deployment/pod-fixed.yaml
+   ```
+
+5. **Attach and Operate**
+   ```bash
+   kubectl attach -it n-audit-sentinel -c sentinel
+   # Follow TUI prompts: Pentester, Client, Scope (IPs/Domains)
+   # Exit: n-audit exit (graceful teardown with seal)
+   ```
 
 ## Runtime Behavior
 - TUI captures Pentester and Client and your explicit scope.
@@ -149,66 +209,100 @@ Operational notes
 
 ## Build & Release
 
-Local builds
+### Local Development Build
 ```bash
+# Build individual binaries
 go build -o bin/n-audit-sentinel ./cmd/n-audit-sentinel
 go build -o bin/n-audit ./cmd/n-audit
+
+# Run tests
+go test ./...
 ```
 
-Create a release artifact
+### Release Build (Production)
 ```bash
+# Create release artifacts with Makefile
 make release VERSION=v1.0.0-Beta
 ```
-Artifacts
-- `n-audit-sentinel-<version>-linux-amd64.tar.gz`
-- `n-audit-sentinel-<version>-linux-amd64.tar.gz.sha256`
 
-## Deployment Options
+**Output Artifacts:**
+- `n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz` — Binary archive
+- `n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz.sha256` — SHA256 checksum
+- `gold-master-<timestamp>.tar.gz` — Source code archive (optional)
 
-- Quick start (manifests): See `DEPLOYMENT.md` for hostPath + RBAC pod YAMLs.
-- Terraform (full workflow): Use `deploy/terraform` to provision storage, labels, and the pod end-to-end. The variables allow overriding image name/tag and storage class. After `terraform apply`, attach with:
+### Verification
 ```bash
-kubectl attach -it n-audit-sentinel -c sentinel
+# Verify SHA256
+sha256sum -c n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz.sha256
+
+# Extract and test
+tar -xzf n-audit-sentinel-v1.0.0-Beta-linux-amd64.tar.gz
+./n-audit-sentinel --version
 ```
-Post-deployment checks are in `VERIFICATION_GUIDE.md`.
+
+## Deployment Methods
+
+### Method 1: Manifest-Based (kubectl)
+Manifest files are provided in `beta-test-deployment/`:
+- `serviceaccount.yaml` — ServiceAccount and RBAC bindings for Cilium
+- `pod-fixed.yaml` — Complete pod definition with mounts and env vars
+
+```bash
+kubectl apply -f beta-test-deployment/serviceaccount.yaml
+kubectl apply -f beta-test-deployment/pod-fixed.yaml
+```
+
+### Method 2: Terraform (Reproducible)
+For automated, version-controlled deployments, use `deploy/terraform/`:
+
+```bash
+cd deploy/terraform
+terraform init
+terraform apply -auto-approve \
+  -var="namespace=default" \
+  -var="image_name=n-audit-sentinel" \
+  -var="image_tag=v1.0.0-Beta"
+```
+
+Variables support customization of image, storage class, and namespace. See `deploy/terraform/variables.tf` for details.
 
 ## License
-MIT License © Kristián Kašník - ITSsafer-DevOps and contributors. See `LICENSE` for details.
 
-## Links
-- Deployment: `DEPLOYMENT.md`
-- Verification: `VERIFICATION_GUIDE.md`
+MIT License © Kristián Kašník - ITSsafer-DevOps and contributors.  
+See [LICENSE](LICENSE) for full text.
 
-## Runtime Parameters & systemd service example
+---
 
-Recommended runtime parameters (examples):
+## Additional Resources
 
-- `--system-audit` : run a basic OS audit scan (default quick checks)
-- `--verbose` : enable verbose logging for troubleshooting
-- `--log-file /var/lib/n-audit/session.log` : explicit log file location
-- `--sign-key /var/lib/n-audit/signing/id_ed25519` : path to SSH signing key
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** — Full deployment and configuration guide
+- **[VERIFICATION_GUIDE.md](VERIFICATION_GUIDE.md)** — Testing and validation procedures
+- **[SECURITY.md](SECURITY.md)** — Security model and operational guidelines
+- **[docs/TOOLS.md](docs/TOOLS.md)** — Go utility reference (release-manager, backup-manager)
 
-Example `systemd` unit (create `/etc/systemd/system/n-audit-sentinel.service`):
+## Local systemd Deployment (Optional)
 
-```ini
-[Unit]
-Description=N-Audit Sentinel (local system audit)
-After=network.target
+For running N-Audit Sentinel as a local systemd service (without Kubernetes), install the provided unit file:
 
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/var/lib/n-audit
-ExecStart=/usr/local/bin/n-audit-sentinel --system-audit --log-file /var/lib/n-audit/session.log --sign-key /var/lib/n-audit/signing/id_ed25519
-Restart=on-failure
-RestartSec=5
+```bash
+sudo cp deploy/n-audit-sentinel.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now n-audit-sentinel.service
 
-[Install]
-WantedBy=multi-user.target
+# Monitor logs
+sudo journalctl -u n-audit-sentinel -f
 ```
 
-Notes:
+### Configuration
 
-- Ensure the `sign-key` exists and is protected (`chmod 600`) and the directory is `700`.
-- Adjust `User=` to a non-root account if you prefer reduced privileges (verify required capabilities).
-- Use `journalctl -u n-audit-sentinel -f` to follow logs when running under `systemd`.
+**Runtime Parameters:**
+- `--system-audit` — Perform basic OS audit scan
+- `--verbose` — Enable verbose logging for troubleshooting
+- `--log-file /var/lib/n-audit/session.log` — Explicit log file location
+- `--sign-key /var/lib/n-audit/signing/id_ed25519` — Path to SSH signing key
+
+**Key Requirements:**
+- Signing key must exist and be protected: `chmod 600`
+- Signing directory must be restricted: `chmod 700`
+- Run as `root` for full capabilities (or review required capabilities for non-root)
+- See [deploy/n-audit-sentinel.service](deploy/n-audit-sentinel.service) for complete unit configuration
