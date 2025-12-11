@@ -18,15 +18,14 @@ Phases executed:
 
 Release artifacts (local `releases/` directory):
 
-- `releases/n-audit-sentinel-v1.0.0-Beta-goldmaster.tar.gz`
-- `releases/n-audit-sentinel-v1.0.0-Beta-goldmaster.tar.gz.sha256`
-- `releases/n-audit-sentinel-v1.0.0-Beta-bin.tar.gz.sha256`
-- `releases/n-audit-sentinel-v1.0.0-Beta-source.tar.gz.sha256`
+- `releases/n-audit-sentinel-v1.0.0-Beta-bin.tar.gz` — SHA256: `9346925e03fcb67206352dae1e4175e09ffd9c457e2a748b64f2abc1e89813e1`
+- `releases/n-audit-sentinel-v1.0.0-Beta-source.tar.gz` — SHA256: `c8ad3a4d60c35e9c435c2ca6689b6171b23ee9bb261684fa231bcbf974c34592`
+- `releases/n-audit-sentinel-v1.0.0-Beta-goldmaster.tar.gz` — SHA256: `2c3a3db4b030ed181045249c6183b42fed501cd2476cc37fc9ba6d06cf48db1d`
 
 Final backup checksum recorded in `FINAL_COMPLETE_BACKUP.sha256`:
 
 ```
-df0639b3e6ae83c14b076737e065fd75aa3a2faff8fc8d50a4e4938b075acda1  releases/n-audit-sentinel-v1.0.0-Beta-goldmaster.tar.gz
+2c3a3db4b030ed181045249c6183b42fed501cd2476cc37fc9ba6d06cf48db1d  releases/n-audit-sentinel-v1.0.0-Beta-goldmaster.tar.gz
 ```
 
 Repository: https://github.com/ITSsafer-DevOps/N-Audit-Sentinel
