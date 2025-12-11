@@ -1,14 +1,14 @@
 package signature
 
 import (
-	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
 
 	"golang.org/x/crypto/ssh"
+
+	"github.com/ITSsafer-DevOps/N-Audit-Sentinel/internal/seal"
 )
 
 // SealLogFile computes SHA-256 of the log file and appends a seal block containing
@@ -26,8 +26,8 @@ func SealLogFile(logPath, privateKeyPath string) error {
 		return fmt.Errorf("read log file: %w", err)
 	}
 
-	h := sha256.Sum256(logData)
-	hashHex := hex.EncodeToString(h[:])
+	// Use the canonical internal/seal package for hashing
+	hashHex := seal.HashSHA256(logData)
 
 	keyData, err := os.ReadFile(privateKeyPath)
 	if err != nil {
@@ -39,13 +39,15 @@ func SealLogFile(logPath, privateKeyPath string) error {
 		return fmt.Errorf("parse private key: %w", err)
 	}
 
-	sig, err := signer.Sign(nil, h[:])
+	// Decode the hex hash back to bytes for signing
+	logHash := []byte(hashHex)
+	sig, err := signer.Sign(nil, logHash)
 	if err != nil {
 		return fmt.Errorf("sign hash: %w", err)
 	}
 	b64Sig := base64.StdEncoding.EncodeToString(sig.Blob)
 
-	seal := fmt.Sprintf("\n\n=== FORENSIC SEAL ===\nSHA256 Hash: %s\nSSH Signature (Base64): %s\n=====================\n", hashHex, b64Sig)
+	sealBlock := fmt.Sprintf("\n\n=== FORENSIC SEAL ===\nSHA256 Hash: %s\nSSH Signature (Base64): %s\n=====================\n", hashHex, b64Sig)
 
 	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
@@ -53,7 +55,7 @@ func SealLogFile(logPath, privateKeyPath string) error {
 	}
 	defer f.Close()
 
-	if _, err := io.WriteString(f, seal); err != nil {
+	if _, err := io.WriteString(f, sealBlock); err != nil {
 		return fmt.Errorf("append seal: %w", err)
 	}
 	return nil
