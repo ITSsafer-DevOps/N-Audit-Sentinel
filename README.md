@@ -15,6 +15,8 @@
 - Contact: itssafer@itssafer.org
 - License: MIT License (Open Source)
 
+Note: This repository contains only source code and release metadata (checksums). Binary release artifacts are produced by the `release-manager` and are not stored in the Git history.
+
 N-Audit Sentinel is a Kubernetes‑native forensic wrapper that runs as PID 1 inside a Kali Linux pod. It hardens network access with Cilium, guarantees clean and human‑readable logs, and seals every session with a cryptographic signature.
 
 ## What, Why, How
