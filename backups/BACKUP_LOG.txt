@@ -72,3 +72,8 @@ e48fc6794f5a46bae0a5340169dfd442cd60c2d14d03f3b1f5afb9de8ccb5d34  n-audit-sentin
 f6444531bbff8411d07e506a3988966d8f5828546f9bb3c81e162d3554ebdeb9  n-audit-sentinel-beta-source-code.tar.gz
 dcd206944e8caa46c1c25510f72fbb487f7ccfb9120684b5c3d8cad5803f1781  backups/n-audit-sentinel-gold-master-20251211-060409.tar.gz
 GitHub Release: v1.0.0-Beta - https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/releases/tag/v1.0.0-Beta
+==== Release backup verification: 2025-12-11T05:49:01Z ====
+64a386ad72600db0976860dc271b1f93fd4bad2b0741a46a832ad57839d2b324  n-audit-sentinel-beta-bin.tar.gz
+712cdfa13841f272bf17a3c026e735d85e6c73033d7cc77e17243dd70e94d879  backups/n-audit-sentinel-beta-source-code-goldmaster.tar.gz
+Binary: n-audit-sentinel-beta-bin.tar.gz
+Source archive: backups/n-audit-sentinel-beta-source-code-goldmaster.tar.gz
