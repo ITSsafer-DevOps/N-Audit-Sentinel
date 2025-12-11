@@ -64,16 +64,14 @@ release: clean build
 	@mkdir -p $(RELEASE_DIR)
 	tar -czf $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz -C $(BIN_DIR) n-audit-sentinel
 	sha256sum $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz.sha256
-	tar --exclude='.git' --exclude='$(BIN_DIR)' --exclude='.terraform' -czf $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-source.tar.gz .
-	sha256sum $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-source.tar.gz > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-source.tar.gz.sha256
-	@echo "Release artifacts created:"; ls -lh $(RELEASE_DIR) | awk '{print "  " $$9, "(" $$5 ")"}'
+	@echo "Release artifacts created:"; ls -lh $(RELEASE_DIR) | grep -E '\.tar\.gz|\.sha256' | awk '{print "  " $$9, "(" $$5 ")"}'
 
-backup-final: clean
+backup-final:
 	@echo "Creating final deterministic backup (gold master)"
 	@mkdir -p $(RELEASE_DIR)
 	git archive --format=tar --prefix=n-audit-sentinel-$(VERSION)-source/ HEAD | gzip -9 > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz
 	sha256sum $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz.sha256
-	@echo "Final backup stored in $(RELEASE_DIR)/"
+	@echo "Backup created:"; ls -lh $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster* | awk '{print "  " $$9, "(" $$5 ")"}'
 
 help:
 	@echo "N-Audit Sentinel - Makefile Targets"
