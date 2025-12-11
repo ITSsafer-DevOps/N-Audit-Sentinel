@@ -2,6 +2,33 @@
 
 Complete testing and validation procedures for N-Audit Sentinel after deployment to Kubernetes.
 
+## Local Testing (Before Deployment)
+
+Run the complete test suite locally to verify functionality:
+
+```bash
+# Run all tests (unit + integration)
+make test
+
+# Run tests with verbose output
+go test ./... -v
+
+# Run only E2E tests
+make test-e2e ENV=k3s
+
+# Check test coverage (generate profile)
+go test ./... -cover
+
+# Format and lint before committing
+make fmt
+make lint
+```
+
+Test results are organized in:
+- `tests/unit/` — Unit tests for individual functions
+- `tests/integration/` — Integration tests across packages
+- `tests/e2e/k8s/` — End-to-end tests for Kubernetes environments
+
 ## Testing Pipeline
 
 ```mermaid

@@ -2,6 +2,35 @@
 
 Complete instructions for deploying N-Audit Sentinel on Kubernetes (K3s, K8s, or managed clusters with Cilium).
 
+## Building & Testing Locally
+
+Before deployment, build and test the project:
+
+```bash
+# Build binary
+make build
+
+# Run unit and integration tests
+make test
+
+# Run end-to-end tests (K3s environment)
+make test-e2e ENV=k3s
+
+# Format code
+make fmt
+
+# Lint code
+make lint
+
+# Create release artifacts (binary + source code tarballs)
+make release VERSION=v1.0.0-Beta
+```
+
+For more Makefile targets, run:
+```bash
+make help
+```
+
 ## Deployment Pipeline
 
 ```mermaid
