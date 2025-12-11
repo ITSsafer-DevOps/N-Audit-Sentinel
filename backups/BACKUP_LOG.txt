@@ -77,3 +77,14 @@ GitHub Release: v1.0.0-Beta - https://github.com/ITSsafer-DevOps/N-Audit-Sentine
 712cdfa13841f272bf17a3c026e735d85e6c73033d7cc77e17243dd70e94d879  backups/n-audit-sentinel-beta-source-code-goldmaster.tar.gz
 Binary: n-audit-sentinel-beta-bin.tar.gz
 Source archive: backups/n-audit-sentinel-beta-source-code-goldmaster.tar.gz
+]633;E;echo "==== Final backup snapshot: $TS ====";90bb20be-ec74-4afd-bdda-f42cba98c0d3]633;C==== Final backup snapshot: 2025-12-11T05:50:26Z ====
+64a386ad72600db0976860dc271b1f93fd4bad2b0741a46a832ad57839d2b324  backups/n-audit-sentinel-beta-bin.tar.gz
+712cdfa13841f272bf17a3c026e735d85e6c73033d7cc77e17243dd70e94d879  backups/n-audit-sentinel-beta-source-code-goldmaster.tar.gz
+Backups dir listing:
+celkom 76M
+-rw-r--r--. 1 rhel rhel 3,3K dec 11 06:50 BACKUP_LOG.txt
+-rw-r--r--. 1 rhel rhel 1,5K dec 11 06:04 CLEANUP_LIST.txt
+-rw-r--r--. 1 rhel rhel  118 dec 11 06:04 GOLD_MASTER_CHECKSUMS.txt
+-rw-r--r--. 1 rhel rhel  30M dec 11 06:50 n-audit-sentinel-beta-bin.tar.gz
+-rw-r--r--. 1 rhel rhel  78K dec 11 06:49 n-audit-sentinel-beta-source-code-goldmaster.tar.gz
+-rw-r--r--. 1 rhel rhel  46M dec 11 06:04 n-audit-sentinel-gold-master-20251211-060409.tar.gz
