@@ -81,7 +81,7 @@ These results were saved to `coverage.out` and `coverage-final.txt` in the repos
 
 - Performed a repository scan of Markdown files containing ` ```mermaid ` blocks and validated each block for basic Mermaid syntax clues (presence of `graph`, `flowchart`, `sequenceDiagram`, or `sequence` keywords).
 - Files checked and found OK:
-	- `README.md` (4 architecture diagramy: 3-vrstvová architektura, data flow, network policy, forensic seal) ✅
+	- `README.md` (4 architecture diagrams: 3-layer architecture, data flow, network policy, forensic seal) ✅
 	- `DEPLOYMENT.md` (deployment pipeline diagram) ✅
 	- `VERIFICATION_GUIDE.md` (testing pipeline diagram) ✅
 	- `SECURITY.md` (threat model diagram) ✅
@@ -124,4 +124,4 @@ Final status: see repository `origin/main` for all commits.
 - All code formatted: `gofmt` applied ✅
 - Git history clean: committed and pushed to `origin/main` ✅
 
-**Autonomous execution:** ✅ BEZ OTÁZOK. AUTONOMNE. 100% HOTOVO.
+**Autonomous execution:** ✅ NO QUESTIONS. AUTONOMOUS. 100% DONE.

@@ -84,3 +84,34 @@ Target minimum coverage:
 ## Reporting security issues
 
 Report security vulnerabilities privately to itssafer@itssafer.org.
+
+---
+
+## Community & Support
+
+**Connect with the maintainers and community:**
+
+- 💼 **LinkedIn:** [ITSsafer DevOps Team](https://www.linkedin.com/in/itsafer-devops/) — Follow for updates and industry insights
+- 🐙 **GitHub Discussions:** [Project Discussions](https://github.com/ITSsafer-DevOps/N-Audit-Sentinel/discussions) — Ask questions, share ideas
+- 📚 **Documentation:** [DEPLOYMENT.md](./DEPLOYMENT.md), [SECURITY.md](./SECURITY.md), [TESTING_AND_VERIFICATION.md](./TESTING_AND_VERIFICATION.md)
+- 🔗 **Related Resources:** [Architecture Diagrams](./docs/ENTERPRISE_ARCHITECTURE.md), [Enterprise-Grade Auditing Guide](./VERIFICATION_GUIDE.md)
+
+## Pull Request Process
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Make changes and test: `make test`
+4. Format code: `make fmt`
+5. Submit PR with description linking to related issues
+6. Await review from maintainers
+7. Address feedback and push updates
+8. Merge upon approval
+
+## Code Review Standards
+
+- **Functionality:** Code must pass all tests and not introduce regressions
+- **Documentation:** Updated markdown and inline comments required
+- **Security:** No hardcoded credentials or unsafe patterns; vulnerability scans must pass
+- **Performance:** No significant performance degradation; benchmarks welcome
+- **Maintainability:** Clear naming, proper error handling, DI patterns for testing
+

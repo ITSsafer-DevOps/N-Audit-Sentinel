@@ -1,13 +1,12 @@
-SHELL := /bin/bash
-SHELL := /bin/bash
 GO := go
 BINARY := bin/n-audit-sentinel
 VERSION ?= v1.0.0-Beta
+BUILD_TOOL := cmd/build-tool/main.go
 
 BIN_DIR := bin
 RELEASE_DIR := releases
 
-.PHONY: all build clean fmt lint test test-e2e release verify-deps security-scan help backup-final
+.PHONY: all build clean fmt lint test test-e2e release verify-deps security-scan help backup-final build-tool
 
 all: build
 
@@ -20,7 +19,9 @@ build:
 
 clean:
 	@echo "Cleaning artifacts..."
-	rm -rf $(BIN_DIR) $(RELEASE_DIR)/*.tar.gz $(RELEASE_DIR)/*.sha256
+	@$(GO) run $(BUILD_TOOL) -cmd verify-deps
+	rm -rf $(BIN_DIR)
+	find $(RELEASE_DIR) -maxdepth 1 \( -name "*.tar.gz" -o -name "*.sha256" \) -delete 2>/dev/null || true
 
 fmt:
 	@echo "Formatting code..."
@@ -28,11 +29,9 @@ fmt:
 
 lint:
 	@echo "Linting..."
-	if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run ./...; \
-	else \
-		$(GO) vet ./...; \
-	fi
+	@$(GO) run $(BUILD_TOOL) -cmd check-tool golangci-lint 2>/dev/null | grep -q FOUND && \
+		golangci-lint run ./... || \
+		$(GO) vet ./...
 
 test:
 	@echo "Running unit and integration tests..."
@@ -40,38 +39,26 @@ test:
 
 test-e2e:
 	@echo "Running E2E tests for ENV=$(ENV)"
-	if [ "$(ENV)" = "k3s" ]; then \
-		echo "K3s environment selected"; \
-	fi
+	$(GO) run $(BUILD_TOOL) -cmd verify-e2e-env -env $(ENV)
 	$(GO) test ./tests/e2e/... -run Test -v
 
 security-scan:
 	@echo "Running security scans (govulncheck if installed)..."
-	if command -v govulncheck >/dev/null 2>&1; then \
-		govulncheck ./... || true; \
-	else \
-		echo "govulncheck not installed - skipping"; \
-	fi
+	@$(GO) run $(BUILD_TOOL) -cmd check-tool govulncheck 2>/dev/null | grep -q FOUND && \
+		govulncheck ./... || true || \
+		echo "govulncheck not installed - skipping"
 
 verify-deps:
 	@echo "Verifying dependencies: go, docker, kubectl"
-	command -v go >/dev/null || (echo "ERROR: go missing" && exit 1)
-	command -v docker >/dev/null || echo "WARN: docker not found - optional"
-	command -v kubectl >/dev/null || echo "WARN: kubectl not found - optional"
+	$(GO) run $(BUILD_TOOL) -cmd verify-deps
 
 release: clean build
 	@echo "Creating release artifacts..."
-	@mkdir -p $(RELEASE_DIR)
-	tar -czf $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz -C $(BIN_DIR) n-audit-sentinel
-	sha256sum $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-bin.tar.gz.sha256
-	@echo "Release artifacts created:"; ls -lh $(RELEASE_DIR) | grep -E '\.tar\.gz|\.sha256' | awk '{print "  " $$9, "(" $$5 ")"}'
+	$(GO) run $(BUILD_TOOL) -cmd release-bin -version $(VERSION) -bin-dir $(BIN_DIR) -release-dir $(RELEASE_DIR)
 
 backup-final:
-	@echo "Creating final deterministic backup (gold master)"
-	@mkdir -p $(RELEASE_DIR)
-	git archive --format=tar --prefix=n-audit-sentinel-$(VERSION)-source/ HEAD | gzip -9 > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz
-	sha256sum $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz > $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster.tar.gz.sha256
-	@echo "Backup created:"; ls -lh $(RELEASE_DIR)/n-audit-sentinel-$(VERSION)-goldmaster* | awk '{print "  " $$9, "(" $$5 ")"}'
+	@echo "Creating final deterministic backup (gold master)..."
+	$(GO) run $(BUILD_TOOL) -cmd backup-source -version $(VERSION) -release-dir $(RELEASE_DIR)
 
 help:
 	@echo "N-Audit Sentinel - Makefile Targets"

@@ -779,3 +779,27 @@ graph LR
 - **Benchmarks:** Signature performance (hash/sign ops), policy generation time
 
 **Critical Paths Covered:**
+
+---
+
+## Authors & Contributors
+
+**Project Leadership:**
+
+- **Founder & Lead Architect:** [Visit LinkedIn](https://www.linkedin.com/in/itsafer-devops/)
+- **Core Development Team:** ITSsafer DevOps Organization
+- **Community Contributions:** Welcomed via GitHub Issues and Pull Requests
+
+For inquiries, collaboration opportunities, or security concerns, connect via:
+- 💼 [LinkedIn Profile](https://www.linkedin.com/in/itsafer-devops/)
+- 🐙 [GitHub Organization](https://github.com/ITSsafer-DevOps/)
+- 📧 Security Contact: See SECURITY.md
+
+---
+
+## License
+
+Licensed under the MIT License. See LICENSE file for details.
+
+## Support & Community
+
